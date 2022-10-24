@@ -92,7 +92,7 @@ class Round():
     # get discard tile and repeat
 
     def start(self):
-        turn = self.wind
+        turn = self.game
         is_win = False
         is_over = False
         while (not self.game_table.no_tile_left() and not is_win and not is_over):
