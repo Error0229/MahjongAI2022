@@ -9,8 +9,14 @@ class FullGame():
     game_table = None
     # players = []
     round = None
+    game = 1
+    repeat_counter = 0
+    wind = 0
+    reach_sticks = 0
+    honba_sticks = 0
+    player_count = 4
 
-    def __init__(self, player_count, players):
+    def __init__(self, player_count):
         self.round_number = 0
         self.game_table = GameTable()
         # tmp_players = players
@@ -19,17 +25,23 @@ class FullGame():
             tmp_players[i].set_seat(i)
         random.shuffle(tmp_players)
         self.players = tmp_players
-        self.round = Round(player_count, tmp_players, 0, 0, 0, 0)
+        # self.round = Round(player_count, tmp_players, 0, 0, 0, 0,0,0)
 
     def game_start(self):
-        while (self.round_number < 8):
-            self.round_number += 1
-            self.round = Round(self.round.player_count, self.round.players,
-                               self.round.wind, self.round.ben, self.round.reach_sticks, self.round.honba_sticks)
-            self.round.run()
+        while (self.wind != 1 and self.game != 5):
+            # self.round_number += 1
+            self.round = Round(self.player_count, self.players,
+                               self.wind, self.game, self.repeat_counter, self.reach_sticks, self.honba_sticks)
+            self.round.start()
+            end_status = self.round.round_end()
+            self.wind = end_status['wind']
+            self.game = end_status['game']
+            self.repeat_counter = end_status['repeat_counter']
+            self.reach_sticks = end_status['reach_sticks']
+            self.honba_sticks = end_status['honba_sticks']
 
     def start_round(self):
-        self.round.run()
+        self.round.start()
 
     @property
     def players_getter(self):
@@ -56,14 +68,17 @@ class Round():
     reach_sticks = 0
     honba_sticks = 0
     wind = 0
-    ben = 0
+    repeat_counter = 0
+    game = 0
+    ending_status = None
 
-    def __init__(self, player_count, players, wind, ben, reach_sticks, honba_sticks):
+    def __init__(self, player_count, players, wind, game, repeat_counter, reach_sticks, honba_sticks):
         self.player_count = player_count
         self.players = players
         # self.dealer = round_number % player_count
         self.wind = wind
-        self.ben = ben
+        self.game = game
+        self.repeat_counter = repeat_counter
         self.reach_sticks = reach_sticks
         self.honba_sticks = honba_sticks
         self.game_table = GameTable(reach_sticks, honba_sticks)
@@ -76,7 +91,7 @@ class Round():
     # draw to player if need draw
     # get discard tile and repeat
 
-    def run(self):
+    def start(self):
         turn = self.wind
         is_win = False
         is_over = False
@@ -108,9 +123,42 @@ class Round():
                 if (action[2]):
                     action = self.players[turn].draw(draw)
             turn = (turn + 1) % self.player_count
+        self.is_win = 0
+        self.is_over = 1
+        self.who_win = -1
+        self.win_from_who = -1
+        # self.round_end(0, 0)
+
+    def round_end(self):
+        if not self.is_win and self.is_over:
+            self.honba_sticks += 1
+            self.repeat_counter += 1
+            if not self.players[self.game-1].is_tenpai:
+                self.game = (self.game + 1)
+                if self.game == 5 and self.wind != 1:
+                    self.wind = (self.wind + 1)
+                    self.game = 0
+            ending_status = {"status": "exhaustive", "wind":  self.wind,
+                             "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
+        else:
+            if self.who_win == self.game:
+                self.repeat_counter += 1
+                self.honba_sticks += 1
+                self.reach_sticks = 0
+            else:
+                self.repeat_counter = 0
+                self.honba_sticks = 0
+                self.reach_sticks = 0
+                self.game = (self.game + 1)
+                if self.game == 5 and self.wind != 1:
+                    self.wind = (self.wind + 1)
+                    self.game = 1
+            ending_status = {"status": "Win", "is_zumo": self.is_zumo,
+                             "win_player": self.who_win, "win_from_who": self.win_from_who, "wind":  self.wind, "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
+            # WIP probably merge into round class
+        return ending_status
 
 
-# WIP probably merge into round class
 class GameTable():
 
     bonus_indicators = None
@@ -160,7 +208,7 @@ class GameTable():
 
 
 if __name__ == '__main__':
-    game = FullGame(4, [])
+    game = FullGame(4)
     game.game_start()
 
     print("Game over")

@@ -42,3 +42,7 @@ class Player:
 
     def action(self):
         return [-1]
+
+    @property
+    def is_tenpai(self):
+        return False
