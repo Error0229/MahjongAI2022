@@ -52,12 +52,37 @@ class Player:
         for i in meld:
             if(i != tile):
                 self.tiles.remove(i)
+    
     # return dict contain:
-    #   'action': str_action
-    #   'dicard': int_discard
+    #   'type': str_action
     #   'player': int_action_player
+    #   'meld': meld
+    #   'tile': tile
     def can_action(self, tile, from_player):
-        pass
+        # choose a best option shintin-wise
+        chi = self.can_chi(tile, from_player)
+        pon = self.can_pon(tile)
+        minken = self.can_minkan(tile)
+        res = dict()
+        res['player'] = self.seat
+        res['tile'] = tile
+        if(chi['count']>0):
+            res['type'] = 'chi'
+            res['meld'] = chi['melds'][0]
+        elif(pon['count']>0):
+            res['type'] = 'pon'
+            res['meld'] = pon['melds'][0]
+        elif(minken['count']>0):
+            res['type'] = 'minken'
+            res['meld'] = minken['melds'][0]
+        else:
+            res['type'] = 'none'
+        return res
+        
+            
+            
+            
+
     
     # return {type:str, count:int, 'melds':[melds], 'tile':int}
     def can_chi(self, tile, from_player):
@@ -76,7 +101,7 @@ class Player:
                         if((tmp in Tile.index_to_chow) and (tmp not in chi_lst)):
                             chi_lst.append(tmp)
             res['count'] = len(chi_lst)
-            res['melds'] = chi_lst
+            res['melds'] = [[chi_lst]]
         return res
 
 
