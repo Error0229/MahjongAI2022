@@ -29,7 +29,16 @@ class Player:
         self.tiles = tiles
         self.wind = wind
 
-    def discard_tile(self, tile):
+    def discard_tile(self, tile=None):
+        tile = self.tiles[0]
         self.tiles.remove(tile)
         self.discard_tiles.append(tile)
         self.gameboard.discard_tile(self.seat, tile)
+        return tile
+
+    def draw_tile(self, tile):
+        self.tiles.append(tile)
+        self.tiles.sort()
+
+    def action(self):
+        return [-1]
