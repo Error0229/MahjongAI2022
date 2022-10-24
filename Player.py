@@ -42,18 +42,31 @@ class Player:
         self.tiles.append(tile)
         self.tiles.sort()
 
-    def action(self):
-        return [-1]
-
     def get_shantin(self):
         bonus_chr = filter(lambda f:f in [self.wind+27, self.seat+27 ,31, 32, 33], self.tiles)
         return Partition.shantin_multiple_forms(self.tiles, self.open_melds, bonus_chr)
     
+
+    def do_action(self, tile, meld):
+        self.open_melds.append(meld)
+        for i in meld:
+            if(i != tile):
+                self.tiles.remove(i)
+    # return dict contain:
+    #   'action': str_action
+    #   'dicard': int_discard
+    #   'player': int_action_player
+    def can_action(self, tile, from_player):
+        pass
     
-    # return [int:how_many_ways_to_chi, [ways of chi]]
+    # return {type:str, count:int, 'melds':[melds], 'tile':int}
     def can_chi(self, tile, from_player):
+        res = dict()
+        res['type'] = 'chi'
+        res['tile'] = tile
         if((self.seat - from_player)%4 != 1):
-            return [0, []]
+            res['count'] = 0
+            res['melds'] = []
         else:
             chi_lst = []
             for parts in Partition.partition(self.tiles):
@@ -62,21 +75,36 @@ class Player:
                         tmp = [part+tile].sort 
                         if((tmp in Tile.index_to_chow) and (tmp not in chi_lst)):
                             chi_lst.append(tmp)
-            return [len(chi_lst), chi_lst]
+            res['count'] = len(chi_lst)
+            res['melds'] = chi_lst
+        return res
 
-    # return [int:0/1, [pon]]
+
+    # return {count:int, 'melds':[melds], 'tile':int}
     def can_pon(self, tile):
+        res = dict()
+        res['type'] = 'pon'
+        res['tile'] = tile
         if(self.tiles.count(tile) < 2):
-            return [0, []]
+            res['count'] = 0
+            res['melds'] = []
         else:
-            return [1, [tile, tile, tile]]
+            res['count'] = 1
+            res['melds'] = [[tile, tile, tile]]
+        return res
 
-    # return [int:0/1, [minkan]]
+    # return {count:int, 'melds':[melds], 'tile':int}
     def can_minkan(self, tile):
-        if(self.tiles.count(tile) != 3):
-            return [0, []]
+        res = dict()
+        res['type'] = 'minkan'
+        res['tile'] = tile
+        if(self.tiles.count(tile) < 3):
+            res['count'] = 0
+            res['melds'] = []
         else:
-            return [1, [tile, tile, tile, tile]]
+            res['count'] = 1
+            res['melds'] = [[tile, tile, tile, tile]]
+        return res
 
     def can_ankan(self, tile):
         pass
