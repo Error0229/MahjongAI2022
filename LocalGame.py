@@ -1,7 +1,6 @@
 import random
 import Pro
 
-
 class FullGame():
 
     def __init__(self, player_count, players):
@@ -48,50 +47,40 @@ class Round():
         self.honba_sticks = honba_sticks
         self.game_table = GameTable(reach_sticks, honba_sticks)
         for player in self.players:
-            player.init_tiles(self.game_table.get_tile(13))
+            player.init_tiles(self.game_table.draw_tile(13))
 
-    # WIP need player interaction, multiple winners, everything here suck
+
+    # round post last tile to players
+    # get their responds
+    # chose one to proceed (win > pon/kan > chi > none)
+    # draw to player if need draw
+    # get discard tile and repeat
     def run(self, round_number):
         turn = self.dealer
-        last_tile = -1
-        new_tile = -1
-        action = ''
-        action_from_player = -1
-        action_to_players = []
+        draw = self.game_table.draw_tile()
+        is_win = False
+        is_over = False
 
-        # do draw: none, riichi, kon, nouth
-        # no draw: chi, pon, win
-        self.players[turn] = self.game_table.get_tile()
-        last_tile = self.players[turn].discard()
+        # action: [int:discard]
+        # currently need: discard, action_player, need_draw
+        action = self.players[turn].draw(draw) # player draw func
+        while(action[0] != -1):
+            discard = action[0]
+            turn = action[1]
 
-        while (last_tile != -1):
-            action = self.player_action()
-            if (action == 'win'):
-                pass
-            elif (action == 'chi'):
-                pass
-            elif (action == 'pon'):
-                pass
-            elif (action == 'kon'):
-                pass
-            elif (action == 'riich'):
-                pass
-            elif (action == 'north'):
-                pass
-            elif(action ==):
-                pass
-            elif(action ==):
-                pass
-            elif(action ==):
-                pass
+            # get actions from players
+            actions = [None for i in self.player_count]
+            for id,player in enumerate(self.players):
+                if(id != turn):
+                    actions[id] = player.action(discard, turn) # player action function (how do the player handle the tile)
+            
+            # somehow get the right action
+            action = actions[0]
 
-    # WIP need player interaction
-
-    def player_action(self):
-        action = None
-        last_tile = -1
-        action_player = 1
-        return action, last_tile, action_player
+            # if need_draw
+            if(action[2]):
+                action = self.players[turn].draw(draw)
+        
 
 
 # WIP probably merge into round class
@@ -113,7 +102,7 @@ class GameTable():
         self.bonus_indicators = [self.tiles[9]]
         self.remaining_count = 136
 
-    def get_tile(self, num=1):
+    def draw_tile(self, num=1):
         '''
         pull out number of tiles
         return -1 if fail
