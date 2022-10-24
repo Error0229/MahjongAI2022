@@ -3,6 +3,7 @@ from MahjongKit.MahjongKit import Tile
 from MahjongKit.MahjongKit import Meld
 from Opponents import MahjongAgent
 import Pro
+from Player import Player
 
 
 class GameTable():
@@ -18,16 +19,18 @@ class GameTable():
     count_remaining_tiles = 0
     revealed_tiles = None
     tiles_mount = None
+    wind = 0
 
-    def __init__(self, ai_obj, player_count):
+    def __init__(self, player_count):
         random.seed()
         winds = [i for i in range(player_count)]
-        opponents = [MahjongAgent.MahjongAgent(
-            self) for i in range(player_count-1)]
+        # opponents = [MahjongAgent.MahjongAgent(
+        #     self) for i in range(player_count-1)]
         random.shuffle(winds)
-        self.players = [ai_obj] + opponents
+        # self.players = [ai_obj] + opponents
+        self.players = [Player(self) for i in range(player_count)]
         for i in range(player_count):
-            self.players[i].set_seat(winds[i])
+            self.players[i].set_seat(i)
         self.count_players = player_count
         self.revealed_tiles = []
         self.round_number = 0
@@ -51,11 +54,16 @@ class GameTable():
         for id, player in enumerate(self.players):
             player.init_tiles(self.tiles_mount[13*id:13*(id+1)])
         self.mount_indicator = 13*self.count_players
+        self.count_remaining_tiles = 70
 
-    def game_start(self):
+    def round_start(self):
         self.init_round()
-        self.dealer_set += 1
+        for i in range(self.count_players):
+            self.players[i].set_wind(self.wind)
+        while (self.count_remaining_tiles != 0):
+            pass
+            # self.dealer_set += 1
 
 
 if __name__ == '__main__':
-    game = GameTable(Pro.Pro, 4)
+    game = GameTable(4)
