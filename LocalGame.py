@@ -84,9 +84,9 @@ class Round():
             draw = self.game_table.draw_tile()
             self.players[turn].draw_tile(draw)
             discard = self.players[turn].discard_tile()
-            print("Player " + str(turn) + ", Draw " +
-                  str(draw) + ", discard " + str(discard)+", Tiles: "+' '.join(Tile.t34_to_grf(self.players[turn].tiles)))
-            # self.game_table.append_revealed_tile(turn, discard)
+            print(f"Player {turn}, Draw {draw:2}, discard {discard:2}, ", end='')
+            print("Tile:", ' '.join(Tile.t34_to_grf(self.players[turn].tiles)))
+        # self.game_table.append_revealed_tile(turn, discard)
         # action: [int:discard]
         # currently need: discard, action_player, need_draw
             action = self.players[turn].action()  # player draw func
@@ -107,6 +107,8 @@ class Round():
                 # if need_draw
                 if (action[2]):
                     action = self.players[turn].draw(draw)
+                
+                
             turn = (turn + 1) % self.player_count
 
 
@@ -162,5 +164,4 @@ class GameTable():
 if __name__ == '__main__':
     game = FullGame(4, [])
     game.game_start()
-
     print("Game over")
