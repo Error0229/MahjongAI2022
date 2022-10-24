@@ -86,3 +86,7 @@ class Player:
 
     def can_riichi(slef):
         pass
+    
+    @property
+    def is_tenpai(self):
+        return False
