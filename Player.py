@@ -42,94 +42,85 @@ class Player:
         self.tiles.append(tile)
         self.tiles.sort()
 
-    def get_shantin(self):
-        bonus_chr = filter(lambda f:f in [self.wind+27, self.seat+27 ,31, 32, 33], self.tiles)
-        return Partition.shantin_multiple_forms(self.tiles, self.open_melds, bonus_chr)
+    def get_shantin(self, new_tile=None, new_meld=[]):
+        tmp_tiles = self.tiles
+        tmp_melds = self.open_melds
+        if(new_tile != None):
+            tmp_tiles.append(new_tile)
+            for i in new_meld:
+                tmp_tiles.remove(i)
+            tmp_melds.append(new_meld)
+        bonus_chr = filter(lambda f:f in [self.wind+27, self.seat+27 ,31, 32, 33], tmp_tiles)
+        return Partition.shantin_multiple_forms(tmp_tiles, tmp_melds, bonus_chr)
     
-
-    def do_action(self, tile, meld):
-        self.open_melds.append(meld)
-        for i in meld:
-            if(i != tile):
-                self.tiles.remove(i)
-    
-    # return dict contain:
-    #   'type': str_action
-    #   'player': int_action_player
-    #   'meld': meld
-    #   'tile': tile
-    def can_action(self, tile, from_player):
-        # choose a best option shintin-wise
-        chi = self.can_chi(tile, from_player)
-        pon = self.can_pon(tile)
-        minken = self.can_minkan(tile)
-        res = dict()
-        res['player'] = self.seat
-        res['tile'] = tile
-        if(chi['count']>0):
-            res['type'] = 'chi'
-            res['meld'] = chi['melds'][0]
-        elif(pon['count']>0):
-            res['type'] = 'pon'
-            res['meld'] = pon['melds'][0]
-        elif(minken['count']>0):
-            res['type'] = 'minken'
-            res['meld'] = minken['melds'][0]
-        else:
-            res['type'] = 'none'
-        return res
+    '''
+    action notes:
+    (these need last tile from another)
+        win:
+        chaken:
+        chi:          discard
+        pon:          discard,                          change_turn
+        minkon: draw, discard, check_stale, open_bonus, change_turn
         
-            
-            
-            
-
+    (these need to draw a tile first)
+        zimo:
+        ankon:  draw, discard, check_stale, open_bonus, change_turn
+        riicih:       discard, check_stale
+        none:         discard
+    '''
+    # return int
+    def do_action(self, action):
+        self.open_melds.append(action['meld'])
+        self.tiles.append(action['tile'])
+        for tile in action['meld']:
+            self.tiles.remove(tile)
+        return self.discard_tile()
     
-    # return {type:str, count:int, 'melds':[melds], 'tile':int}
+    # return {'type':str, 'player':int, 'tile':int, 'meld':[int, int, int]}
+    def can_action(self, tile, from_player):
+        no_action = {'type':'dont_call'}
+        actions = self.can_chi(tile, from_player) + self.can_pon(tile) + no_action
+        return actions[0]
+        
+    # return [{'type':str, 'player':int, 'tile':int, 'meld':[int, int, int]}]
     def can_chi(self, tile, from_player):
-        res = dict()
-        res['type'] = 'chi'
-        res['tile'] = tile
-        if((self.seat - from_player)%4 != 1):
-            res['count'] = 0
-            res['melds'] = []
-        else:
-            chi_lst = []
+        if((self.seat - from_player)%4 == 1):
+            melds = []
             for parts in Partition.partition(self.tiles):
                 for part in parts:
-                    if(len(part)==2 and part[0]!=part[1]):
-                        tmp = [part+tile].sort 
-                        if((tmp in Tile.index_to_chow) and (tmp not in chi_lst)):
-                            chi_lst.append(tmp)
-            res['count'] = len(chi_lst)
-            res['melds'] = [[chi_lst]]
-        return res
+                    # put part with 2 different tiles in melds
+                    if(len(part)==2 and (part[0]!=part[1]) and (part not in melds)):
+                        melds.append(part)
+            # check every part + tile is in chow
+            melds = filter(lambda x:(sorted(x+tile) in Tile.index_to_chow), melds)  
+            if(len(melds) > 0):
+                ress = []
+                for meld in melds:
+                    ress.append({'type':'chi', 'player':self.seat, 'tile':tile, 'meld':meld})    
+                return ress
+        return []
 
-
-    # return {count:int, 'melds':[melds], 'tile':int}
+    # return [{'type':str, 'player':int, 'tile':int, 'meld':[int, int, int, int]}]
     def can_pon(self, tile):
-        res = dict()
-        res['type'] = 'pon'
-        res['tile'] = tile
         if(self.tiles.count(tile) < 2):
-            res['count'] = 0
-            res['melds'] = []
-        else:
-            res['count'] = 1
-            res['melds'] = [[tile, tile, tile]]
-        return res
+            res = dict()
+            res['type'] = 'pon'
+            res['player'] = self.seat
+            res['tile'] = tile
+            res['meld'] = [tile, tile, tile]
+            return [res]
+        return []
 
-    # return {count:int, 'melds':[melds], 'tile':int}
+    # return [{'type':str, 'player':int, 'tile':int, 'meld':[meld]}]
     def can_minkan(self, tile):
-        res = dict()
-        res['type'] = 'minkan'
-        res['tile'] = tile
-        if(self.tiles.count(tile) < 3):
-            res['count'] = 0
-            res['melds'] = []
-        else:
-            res['count'] = 1
-            res['melds'] = [[tile, tile, tile, tile]]
-        return res
+        if(self.tiles.count(tile) == 3):
+            res = dict()
+            res['type'] = 'minkan'
+            res['player'] = self.seat
+            res['tile'] = tile
+            res['meld'] = [tile, tile, tile, tile]
+            return [res]
+        return []
 
     def can_ankan(self, tile):
         pass
