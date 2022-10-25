@@ -127,17 +127,17 @@ class Round():
                 if actions[i]['type'] == 'win':
                     who_win.append(i)
             if who_kan != -1:
-                self.players[who_kan].do_action()
+                self.players[who_kan].do_action(actions[who_kan])
                 turn = who_kan
                 meld_last_round = True
                 continue
             if who_pon != -1:
-                self.players[who_pon].do_action()
+                self.players[who_pon].do_action(actions[who_pon])
                 turn = who_pon
                 meld_last_round = True
                 continue
             if who_chi != -1:
-                self.players[who_chi].do_action()
+                self.players[who_chi].do_action(actions[who_chi])
                 turn = who_chi
                 meld_last_round = True
                 continue
