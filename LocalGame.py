@@ -114,7 +114,7 @@ class Round():
                 Tile.t34_to_grf(self.players[turn].open_melds)))
             # action: [int:discard]
             # currently need: discard, action_player, need_draw
-            actions = [self.players[i].can_action(
+            actions = [self.players[i].can_discard_action(
                 discard, turn) for i in range(self.player_count)]  # player draw func
             who_pon = -1
             who_kan = -1
@@ -130,17 +130,17 @@ class Round():
                 if actions[i]['type'] == 'win':
                     who_win.append(i)
             if who_kan != -1:
-                self.players[who_kan].do_action(actions[who_kan])
+                self.players[who_kan].do_discard_action(actions[who_kan])
                 turn = who_kan
                 meld_last_round = True
                 continue
             if who_pon != -1:
-                self.players[who_pon].do_action(actions[who_pon])
+                self.players[who_pon].do_discard_action(actions[who_pon])
                 turn = who_pon
                 meld_last_round = True
                 continue
             if who_chi != -1:
-                self.players[who_chi].do_action(actions[who_chi])
+                self.players[who_chi].do_discard_action(actions[who_chi])
                 turn = who_chi
                 meld_last_round = True
                 continue
