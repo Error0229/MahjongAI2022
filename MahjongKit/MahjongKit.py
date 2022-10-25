@@ -248,16 +248,15 @@ class Tile:
     
     @staticmethod
     def convert_bonus(tile34):
-        tiles = []
-        reds = []
         dic = {34:4, 35:13, 36:22}
+        res = []
         for i in tile34:
-            if(i==34 or i==35 or i==36):
-                reds.append(i)
-                tiles.append(dic[i])
+            if(i in dic.keys()):
+                res.append(dic[i])
             else:
-                tiles.append(i)
-        return {'tiles':sorted(tiles), 'reds':sorted(reds)}
+                res.append(i)
+        return res
+
 
 class Meld:
     """

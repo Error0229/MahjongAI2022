@@ -98,32 +98,63 @@ class Player:
     def can_chi(self, tile, from_player):
         if ((self.seat - from_player) % 4 == 1):
             melds = []
+            convert_tile = Tile.convert_bonus([tile])[0]
             for parts in Partition.partition(self.tiles):
                 for part in parts:
                     # put part with 2 different tiles in melds
                     if (len(part) == 2 and (part[0] != part[1]) and (part not in melds)):
                         melds.append(part)
-            # check every part + tile is in chow
-            melds = list(filter(lambda x: (
-                sorted(x+[tile]) in Tile.index_to_chow), melds))
+            # complete every meld, and check if it is in the chow index
+            melds = list(map(lambda x:sorted(x+[convert_tile]), melds))
+            melds = list(filter(lambda x:(x in Tile.index_to_chow), melds))
             if (len(melds) > 0):
                 ress = []
-                for meld in melds:
-                    ress.append({'type':'chi', 'player':self.seat, 'from':from_player, 'tile':tile, 
-                                'meld':sorted(meld+[tile]), 'need_draw':False})
+                for m in melds:
+                    if((4 in m) and (34 in (self.tiles + [tile]))):
+                        meld = [(34 if(t==4) else t) for t in m]    
+                    elif((13 in m) and (35 in (self.tiles + [tile]))):
+                        meld = [(35 if(t==13) else t) for t in m]
+                    elif((22 in m) and (36 in (self.tiles + [tile]))):
+                        meld = [(36 if(t==22) else t) for t in m]
+                    else:
+                        meld = m
+                    ress.append({'type':'chi', 'player':self.seat, 'from':from_player,
+                                 'tile':tile, 'meld':meld, 'need_draw':False})
                 return ress
         return []
 
     def can_pon(self, tile, from_player):
-        if (self.tiles.count(tile) >= 2):
-            return [{'type':'pon', 'player':self.seat, 'from':from_player, 'tile':tile, 
-                    'meld':[tile, tile, tile], 'need_draw':False}]
+        convert_hands = Tile.convert_bonus(self.tiles)
+        convert_tile =  Tile.convert_bonus([tile])[0]
+        if(convert_hands.count(convert_tile) >= 2):
+            if((convert_tile== 4) and (34 in (self.tiles + [tile]))):
+                meld = [4,4,34]
+            elif((convert_tile==13) and (35 in (self.tiles + [tile]))):
+                meld = [13,13,35]
+            elif((convert_tile==22) and (36 in (self.tiles + [tile]))):
+                meld = [22,22,36]
+            else:
+                meld = [tile, tile, tile]
+            return [{'type':'pon', 'player':self.seat, 'from':from_player,
+                     'tile':tile, 'meld':meld, 'need_draw':False}]
         return []
 
+            
+
     def can_minkan(self, tile, from_player):
-        if (self.tiles.count(tile) == 3):
-            return [{'type':'minkan', 'player':self.seat, 'from':from_player, 'tile':tile, 
-                    'meld':[tile, tile, tile], 'need_draw':False}]
+        convert_hands = Tile.convert_bonus(self.tiles)
+        convert_tile =  Tile.convert_bonus([tile])[0]
+        if(convert_hands.count(convert_tile) == 3):
+            if((convert_tile== 4) and (34 in (self.tiles + [tile]))):
+                meld = [4,4,4,34]
+            elif((convert_tile==13) and (35 in (self.tiles + [tile]))):
+                meld = [13,13,13,35]
+            elif((convert_tile==22) and (36 in (self.tiles + [tile]))):
+                meld = [22,22,22,36]
+            else:
+                meld = [tile, tile, tile, tile]
+            return [{'type':'pon', 'player':self.seat, 'from':from_player,
+                     'tile':tile, 'meld':meld, 'need_draw':False}]
         return []
 
     def can_draw(self, tile, from_player):
