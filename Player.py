@@ -71,30 +71,30 @@ class Player:
         riicih:       discard, check_stale
         none:         discard
     '''
-    # return int
-
-    def do_action(self, action):
-        print(action)
-        self.open_melds.append(action['meld'])
-        self.tiles.append(action['tile'])
+    
+    
+    def do_discard_action(self, discard_action):
+        print(discard_action)
+        self.open_melds.append(discard_action['meld'])
+        self.tiles.append(discard_action['tile'])
         print(self.tiles)
-        for tile in action['meld']:
+        for tile in discard_action['meld']:
             self.tiles.remove(tile)
-        # return self.discard_tile()
 
-    # return {'type':str, 'player':int, 'tile':int, 'meld':[int, int, int]}
-    def can_action(self, tile, from_player):
-        no_action = {'type': 'dont_call'}
-        if self.can_chi(tile, from_player):
-            return self.can_chi(tile, from_player)[0]
-        if self.can_pon(tile):
-            return self.can_pon(tile)[0]
-        return no_action
-        actions = self.can_chi(tile, from_player) + \
-            self.can_pon(tile) + [no_action]
-        return actions[0]
+    '''
+    CATJAM READS THIS
+    discard_action dict contain:
+        type:       str (win, chi, pon, minkan, draw, none)
+        player:     int (player who do the action)
+        from:       int (discard tile form the player)
+        tile:       int (discard tile)
+        meld:       [int, int, int] (for chi, pon, minkan) ([] if win, draw, none)
+        need_draw:  bool (True if draw, minkan)
+    '''
+    def can_discard_action(self, tile, from_player):
+        discard_actions = self.can_pon(tile, from_player) + self.can_chi(tile, from_player) + self.can_draw(tile, from_player)
+        return discard_actions[0]
 
-    # return [{'type':str, 'player':int, 'tile':int, 'meld':[int, int, int]}]
     def can_chi(self, tile, from_player):
         if ((self.seat - from_player) % 4 == 1):
             melds = []
@@ -109,32 +109,29 @@ class Player:
             if (len(melds) > 0):
                 ress = []
                 for meld in melds:
-                    ress.append({'type': 'chi', 'player': self.seat,
-                                'tile': tile, 'meld': sorted(meld+[tile])})
+                    ress.append({'type':'chi', 'player':self.seat, 'from':from_player, 'tile':tile, 
+                                'meld':sorted(meld+[tile]), 'need_draw':False})
                 return ress
         return []
 
-    # return [{'type':str, 'player':int, 'tile':int, 'meld':[int, int, int, int]}]
-    def can_pon(self, tile):
-        if (self.tiles.count(tile) == 2):
-            res = dict()
-            res['type'] = 'pon'
-            res['player'] = self.seat
-            res['tile'] = tile
-            res['meld'] = [tile, tile, tile]
-            return [res]
+    def can_pon(self, tile, from_player):
+        if (self.tiles.count(tile) >= 2):
+            return [{'type':'pon', 'player':self.seat, 'from':from_player, 'tile':tile, 
+                    'meld':[tile, tile, tile], 'need_draw':False}]
         return []
 
-    # return [{'type':str, 'player':int, 'tile':int, 'meld':[meld]}]
-    def can_minkan(self, tile):
+    def can_minkan(self, tile, from_player):
         if (self.tiles.count(tile) == 3):
-            res = dict()
-            res['type'] = 'minkan'
-            res['player'] = self.seat
-            res['tile'] = tile
-            res['meld'] = [tile, tile, tile, tile]
-            return [res]
+            return [{'type':'minkan', 'player':self.seat, 'from':from_player, 'tile':tile, 
+                    'meld':[tile, tile, tile], 'need_draw':False}]
         return []
+
+    def can_draw(self, tile, from_player):
+        if ((self.seat - from_player) % 4 == 1):
+            return [{'type':'draw', 'player':self.seat, 'from':from_player, 'tile':tile, 
+                    'meld':[], 'need_draw':True}]
+        return [{'type':'none', 'player':self.seat, 'from':from_player, 'tile':tile, 
+                'meld':[], 'need_draw':False}]
 
     def can_ankan(self, tile):
         pass
