@@ -159,6 +159,10 @@ class Round():
                         partitions, final_tile, melds, is_zimo, reach, Tile.to_wind[player], Tile.to_wind(turn), reach)
                     fu = WinWaitCal.fu_calculation(
                         partitions, final_tile, melds, is_zimo, reach)
+                    score, description = WinWaitCal.score_calculation(
+                        han, fu, who_win == game, False)
+                    print(f"Player {player} win with {description}")
+                    self.players[player].score += score
                     # def han_calculation(hand_partition, final_tile, melds, minkan, ankan, is_zimo, player_wind, round_wind, reach)
                     # def fu_calculation(hand_partition, final_tile, melds, minkan, ankan, is_zimo, player_wind, round_wind):
                     # def score_calculation_base(han, fu, is_dealer, is_zimo):
