@@ -1,4 +1,5 @@
 from MahjongKit.MahjongKit import Tile, Meld, Partition, WinWaitCal
+import random
 
 
 class Player:
@@ -33,7 +34,7 @@ class Player:
         self.wind = wind
 
     def discard_tile(self, tile=None):
-        tile = self.tiles[0]
+        tile = self.tiles[random.randint(0, len(self.tiles)-1)]
         self.tiles.remove(tile)
         self.discard_tiles.append(tile)
         self.gameboard.discard_tile(self.seat, tile)
