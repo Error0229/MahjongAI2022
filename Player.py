@@ -51,8 +51,8 @@ class Player:
             for i in new_meld:
                 tmp_tiles.remove(i)
             tmp_melds.append(new_meld)
-        bonus_chr = filter(
-            lambda f: f in [self.wind+27, self.seat+27, 31, 32, 33], tmp_tiles)
+        bonus_chr = list(filter(
+            lambda f: f in [self.wind+27, self.seat+27, 31, 32, 33], tmp_tiles))
         return Partition.shantin_multiple_forms(tmp_tiles, tmp_melds, bonus_chr)
 
     '''
@@ -96,8 +96,8 @@ class Player:
                     if (len(part) == 2 and (part[0] != part[1]) and (part not in melds)):
                         melds.append(part)
             # check every part + tile is in chow
-            melds = filter(lambda x: (
-                sorted(x+tile) in Tile.index_to_chow), melds)
+            melds = list(filter(lambda x: (
+                sorted(x+[tile]) in Tile.index_to_chow), melds))
             if (len(melds) > 0):
                 ress = []
                 for meld in melds:
