@@ -102,14 +102,15 @@ class Round():
             print(
                 f"Player {turn}, Draw {draw:2}, discard {discard:2}, ", end='')
             print("Tile:", ' '.join(Tile.t34_to_grf(self.players[turn].tiles)))
-        # self.game_table.append_revealed_tile(turn, discard)
-        # action: [int:discard]
-        # currently need: discard, action_player, need_draw
+            # self.game_table.append_revealed_tile(turn, discard)
+            # action: [int:discard]
+            # currently need: discard, action_player, need_draw
             actions = [self.players[i].can_action(
                 discard, turn) for i in range(self.player_count)]  # player draw func
             who_pon = -1
             who_kan = -1
             who_chi = -1
+            who_win = []
             for i in range(self.player_count):
                 if actions[i]['type'] == 'pon':
                     who_pon = i
@@ -117,6 +118,8 @@ class Round():
                     who_kan = i
                 if actions[i]['type'] == 'chi':
                     who_chi = i
+                if actions[i]['type'] == 'win':
+                    who_win.append(i)
             if who_kan != -1:
                 self.players[who_kan].kan_tile(discard, turn)
                 turn = who_kan
