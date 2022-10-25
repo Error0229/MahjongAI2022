@@ -83,7 +83,7 @@ class Player:
     def can_action(self, tile, from_player):
         no_action = {'type': 'dont_call'}
         actions = self.can_chi(tile, from_player) + \
-            self.can_pon(tile) + no_action
+            self.can_pon(tile) + [no_action]
         return actions[0]
 
     # return [{'type':str, 'player':int, 'tile':int, 'meld':[int, int, int]}]
