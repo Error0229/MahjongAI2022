@@ -71,7 +71,6 @@ class Player:
         none:         discard
     '''
     # return int
-
     def do_action(self, action):
         self.open_melds.append(action['meld'])
         self.tiles.append(action['tile'])
