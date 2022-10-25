@@ -1,2 +1,3 @@
 __pycache__/*.pyc
-MahjongKit/__pycache__/*.pyc
+MahjongKit/__pycache__/
+__pycache__/
