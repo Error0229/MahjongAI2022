@@ -1,3 +1,5 @@
+import enum
+from tabnanny import check
 from MahjongKit.MahjongKit import Tile, Meld, Partition, WinWaitCal
 import random
 
@@ -34,27 +36,48 @@ class Player:
         self.wind = wind
 
     def discard_tile(self, tile=None):
-        tile = self.tiles[random.randint(0, len(self.tiles)-1)]
+        # tile = self.tiles[random.randint(0, len(self.tiles)-1)]
+        tile = self.to_discard_tile()['tile']
         self.tiles.remove(tile)
         self.discard_tiles.append(tile)
         self.gameboard.discard_tile(self.seat, tile)
         return tile
+    
+    # return {'tile':int, 'shantin':dic}
+    def to_discard_tile(self):
+        res = None
+        for id in range(len(self.tiles)):
+            hand = [i for i in self.tiles]
+            new_tile = hand.pop(id)
+            check = {'tile':new_tile, 'shantin':self.get_shantin(hand)}
+            if(res==None):
+                res = check
+            else:
+                if(new_tile == res['tile']):
+                    continue
+                if(min(res['shantin'].values()) < min(check['shantin'].values())):
+                    continue
+                else:
+                    res = check
+        return res
+
+
+
 
     def draw_tile(self, tile):
         self.tiles.append(tile)
         self.tiles.sort()
 
-    def get_shantin(self, new_tile=None, new_meld=[]):
-        tmp_tiles = self.tiles
-        tmp_melds = self.open_melds
-        if (new_tile != None):
-            tmp_tiles.append(new_tile)
-            for i in new_meld:
-                tmp_tiles.remove(i)
-            tmp_melds.append(new_meld)
-        bonus_chr = filter(
-            lambda f: f in [self.wind+27, self.seat+27, 31, 32, 33], tmp_tiles)
-        return Partition.shantin_multiple_forms(tmp_tiles, tmp_melds, bonus_chr)
+    def get_shantin(self, new_tiles=None, new_meld=[]):
+        if(new_tiles==None):
+            hand = self.tiles
+        else:
+            hand = new_tiles
+        melds = self.open_melds
+        if(new_meld!=[]):
+            melds.append(new_meld) 
+        bonus_chr = list(filter(lambda f: f in [self.wind+27, self.seat+27, 31, 32, 33], hand))
+        return Partition.shantin_multiple_forms(hand, melds, bonus_chr)
 
     '''
     action notes:
