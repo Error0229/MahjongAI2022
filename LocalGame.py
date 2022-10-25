@@ -99,31 +99,55 @@ class Round():
             draw = self.game_table.draw_tile()
             self.players[turn].draw_tile(draw)
             discard = self.players[turn].discard_tile()
-            print(f"Player {turn}, Draw {draw:2}, discard {discard:2}, ", end='')
+            print(
+                f"Player {turn}, Draw {draw:2}, discard {discard:2}, ", end='')
             print("Tile:", ' '.join(Tile.t34_to_grf(self.players[turn].tiles)))
         # self.game_table.append_revealed_tile(turn, discard)
         # action: [int:discard]
         # currently need: discard, action_player, need_draw
-            action = self.players[turn].action()  # player draw func
-            while (action[0] != -1):
-                discard = action[0]
-                turn = action[1]
+            actions = [self.players[i].can_action(
+                discard, turn) for i in range(self.player_count)]  # player draw func
+            who_pon = -1
+            who_kan = -1
+            who_chi = -1
+            for i in range(self.player_count):
+                if actions[i]['type'] == 'pon':
+                    who_pon = i
+                if actions[i]['type'] == 'minkan':
+                    who_kan = i
+                if actions[i]['type'] == 'chi':
+                    who_chi = i
+            if who_kan != -1:
+                self.players[who_kan].kan_tile(discard, turn)
+                turn = who_kan
+                continue
+            if who_pon != -1:
+                self.players[who_pon].pon_tile(discard, turn)
+                turn = who_pon
+                continue
+            if who_chi != -1:
+                self.players[who_chi].chi_tile(discard, turn)
+                turn = who_chi
+                continue
 
-                # get actions from players
-                actions = [None for i in self.player_count]
-                for id, player in enumerate(self.players):
-                    if (id != turn):
-                        # player action function (how do the player handle the tile)
-                        actions[id] = player.action(discard, turn)
+            # while (action[0] != -1):
+            #     discard = action[0]
+            #     turn = action[1]
 
-                # somehow get the right action
-                action = actions[0]
+            #     # get actions from players
+            #     actions = [None for i in self.player_count]
+            #     for id, player in enumerate(self.players):
+            #         if (id != turn):
+            #             # player action function (how do the player handle the tile)
+            #             actions[id] = player.action(discard, turn)
 
-                # if need_draw
-                if (action[2]):
-                    action = self.players[turn].draw(draw)
-                
-                
+            #     # somehow get the right action
+            #     action = actions[0]
+
+            #     # if need_draw
+            #     if (action[2]):
+            #         action = self.players[turn].draw(draw)
+
             turn = (turn + 1) % self.player_count
         self.is_win = 0
         self.is_over = 1
