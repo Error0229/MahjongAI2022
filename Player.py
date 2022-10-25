@@ -63,7 +63,7 @@ class Player:
         chi:          discard
         pon:          discard,                          change_turn
         minkon: draw, discard, check_stale, open_bonus, change_turn
-        
+
     (these need to draw a tile first)
         zimo:
         ankon:  draw, discard, check_stale, open_bonus, change_turn
@@ -71,9 +71,12 @@ class Player:
         none:         discard
     '''
     # return int
+
     def do_action(self, action):
+        print(action)
         self.open_melds.append(action['meld'])
         self.tiles.append(action['tile'])
+        print(self.tiles)
         for tile in action['meld']:
             self.tiles.remove(tile)
         # return self.discard_tile()
@@ -81,6 +84,11 @@ class Player:
     # return {'type':str, 'player':int, 'tile':int, 'meld':[int, int, int]}
     def can_action(self, tile, from_player):
         no_action = {'type': 'dont_call'}
+        if self.can_chi(tile, from_player):
+            return self.can_chi(tile, from_player)[0]
+        if self.can_pon(tile):
+            return self.can_pon(tile)[0]
+        return no_action
         actions = self.can_chi(tile, from_player) + \
             self.can_pon(tile) + [no_action]
         return actions[0]
@@ -95,19 +103,19 @@ class Player:
                     if (len(part) == 2 and (part[0] != part[1]) and (part not in melds)):
                         melds.append(part)
             # check every part + tile is in chow
-            melds = filter(lambda x: (
-                sorted(x+tile) in Tile.index_to_chow), melds)
+            melds = list(filter(lambda x: (
+                sorted(x+[tile]) in Tile.index_to_chow), melds))
             if (len(melds) > 0):
                 ress = []
                 for meld in melds:
                     ress.append({'type': 'chi', 'player': self.seat,
-                                'tile': tile, 'meld': meld})
+                                'tile': tile, 'meld': sorted(meld+[tile])})
                 return ress
         return []
 
     # return [{'type':str, 'player':int, 'tile':int, 'meld':[int, int, int, int]}]
     def can_pon(self, tile):
-        if (self.tiles.count(tile) < 2):
+        if (self.tiles.count(tile) == 2):
             res = dict()
             res['type'] = 'pon'
             res['player'] = self.seat
@@ -136,6 +144,6 @@ class Player:
     def can_riichi(slef):
         pass
 
-    @property
+    @ property
     def is_tenpai(self):
         return False
