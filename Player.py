@@ -163,7 +163,7 @@ class Player:
                 meld = [22, 22, 22, 36]
             else:
                 meld = [tile, tile, tile, tile]
-            return [{'type': 'pon', 'player': self.seat, 'from': from_player,
+            return [{'type': 'minkan', 'player': self.seat, 'from': from_player,
                      'tile': tile, 'meld': meld, 'need_draw': False}]
         return []
 
