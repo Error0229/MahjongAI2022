@@ -10,6 +10,8 @@ class Player:
     points = 0
     gameboard = None
     open_melds = []
+    ankan = []
+    minkan = []
     riichi_status = False
 
     def __init__(self, gameboard):
@@ -18,6 +20,7 @@ class Player:
         self.points = 25000
         self.gameboard = gameboard
         self.open_melds = []
+        self.ankan = []
         self.riichi_status = False
 
     def init_tiles(self, tiles):
@@ -71,13 +74,16 @@ class Player:
         riicih:       discard, check_stale
         none:         discard
     '''
-    
-    
+
     def do_discard_action(self, discard_action):
-        print(discard_action)
-        self.open_melds.append(discard_action['meld'])
+        # print(discard_action)
+        if (discard_action['type'] == 'chi' or discard_action['type'] == 'pon'):
+            self.open_melds.append(discard_action['meld'])
+        elif discard_action['type'] == 'minkan':
+            self.minkan.append(discard_action['meld'])
+        # self.open_melds.append(discard_action['meld'])
         self.tiles.append(discard_action['tile'])
-        print(self.tiles)
+        # print(self.tiles)
         for tile in discard_action['meld']:
             self.tiles.remove(tile)
 
@@ -91,9 +97,15 @@ class Player:
         meld:       [int, int, int] (for chi, pon, minkan) ([] if win, draw, none)
         need_draw:  bool (True if draw, minkan)
     '''
+
     def can_discard_action(self, tile, from_player):
-        discard_actions = self.can_pon(tile, from_player) + self.can_chi(tile, from_player) + self.can_draw(tile, from_player)
-        return discard_actions[0]
+        discard_actions = []
+        discard_actions += self.can_pon(tile, from_player)
+        discard_actions += self.can_chi(tile, from_player)[0] if len(
+            self.can_chi(tile, from_player)) > 0 else []
+        discard_actions += self.can_minkan(tile, from_player)
+        discard_actions += self.can_draw(tile, from_player)
+        return discard_actions[random.randint(0, len(discard_actions)-1)]
 
     def can_chi(self, tile, from_player):
         if ((self.seat - from_player) % 4 == 1):
@@ -109,29 +121,29 @@ class Player:
             if (len(melds) > 0):
                 ress = []
                 for meld in melds:
-                    ress.append({'type':'chi', 'player':self.seat, 'from':from_player, 'tile':tile, 
-                                'meld':sorted(meld+[tile]), 'need_draw':False})
+                    ress.append([{'type': 'chi', 'player': self.seat, 'from': from_player, 'tile': tile,
+                                'meld': sorted(meld+[tile]), 'need_draw': False}])
                 return ress
         return []
 
     def can_pon(self, tile, from_player):
         if (self.tiles.count(tile) >= 2):
-            return [{'type':'pon', 'player':self.seat, 'from':from_player, 'tile':tile, 
-                    'meld':[tile, tile, tile], 'need_draw':False}]
+            return [{'type': 'pon', 'player': self.seat, 'from': from_player, 'tile': tile,
+                    'meld': [tile, tile, tile], 'need_draw':False}]
         return []
 
     def can_minkan(self, tile, from_player):
         if (self.tiles.count(tile) == 3):
-            return [{'type':'minkan', 'player':self.seat, 'from':from_player, 'tile':tile, 
-                    'meld':[tile, tile, tile], 'need_draw':False}]
+            return [{'type': 'minkan', 'player': self.seat, 'from': from_player, 'tile': tile,
+                    'meld': [tile, tile, tile, tile], 'need_draw':False}]
         return []
 
     def can_draw(self, tile, from_player):
         if ((self.seat - from_player) % 4 == 1):
-            return [{'type':'draw', 'player':self.seat, 'from':from_player, 'tile':tile, 
-                    'meld':[], 'need_draw':True}]
-        return [{'type':'none', 'player':self.seat, 'from':from_player, 'tile':tile, 
-                'meld':[], 'need_draw':False}]
+            return [{'type': 'draw', 'player': self.seat, 'from': from_player, 'tile': tile,
+                    'meld': [], 'need_draw':True}]
+        return [{'type': 'none', 'player': self.seat, 'from': from_player, 'tile': tile,
+                'meld': [], 'need_draw':False}]
 
     def can_ankan(self, tile):
         pass
@@ -145,3 +157,5 @@ class Player:
     @ property
     def is_tenpai(self):
         return False
+#[{'type': 'pon', 'player': 3, 'from': 1, 'tile': 17, 'meld': [17, 17, 17], 'need_draw': False}, {'type': 'minkan', 'player': 3, 'from': 1, 'tile': 17, 'meld': [17, 17, 17, 17], 'need_draw': False}, {'type': 'none', 'player': 3, 'from': 1, 'tile': 17, 'meld': [], 'need_draw': False}]
+# [{'type': 'pon', 'player': 1, 'from': 2, 'tile': 23, 'meld': [23, 23, 23], 'need_draw': False}, {'type': 'minkan', 'player': 1, 'from': 2, 'tile': 23, 'meld': [23, 23, 23, 23], 'need_draw': False}, {'type': 'none', 'player': 1, 'from': 2, 'tile': 23, 'meld': [], 'need_draw': False}]
