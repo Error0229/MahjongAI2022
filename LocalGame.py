@@ -84,6 +84,7 @@ class Round():
         self.game_table = GameTable(reach_sticks, honba_sticks)
         for player in self.players:
             player.init_tiles(self.game_table.draw_tile(13))
+            player.open_melds = []
 
     # round post last tile to players
     # get their responds
@@ -103,12 +104,14 @@ class Round():
                 # action_draw = self.players[turn].action_after_draw()
                 # if action_draw['type'] == 'zimo':
                 #     is_win = True
+            meld_last_round = False
 
             discard = self.players[turn].discard_tile()
+            self.game_table.discard_tile(turn, discard)
             print(
-                f"Player {turn}, Draw {draw:2}, discard {discard:2}, ", end='')
-            print("Tile:", ' '.join(Tile.t34_to_grf(self.players[turn].tiles)))
-            # self.game_table.append_revealed_tile(turn, discard)
+                f"Player {turn}, Draw {Tile.t34_to_grf(draw):2}, discard {Tile.t34_to_grf(discard):2}, ", end='')
+            print("Tile:", ' '.join(Tile.t34_to_grf(self.players[turn].tiles)), ", Melds :", ' '.join(
+                Tile.t34_to_grf(self.players[turn].open_melds)))
             # action: [int:discard]
             # currently need: discard, action_player, need_draw
             actions = [self.players[i].can_action(
@@ -127,17 +130,17 @@ class Round():
                 if actions[i]['type'] == 'win':
                     who_win.append(i)
             if who_kan != -1:
-                self.players[who_kan].do_action()
+                self.players[who_kan].do_action(actions[who_kan])
                 turn = who_kan
                 meld_last_round = True
                 continue
             if who_pon != -1:
-                self.players[who_pon].do_action()
+                self.players[who_pon].do_action(actions[who_pon])
                 turn = who_pon
                 meld_last_round = True
                 continue
             if who_chi != -1:
-                self.players[who_chi].do_action()
+                self.players[who_chi].do_action(actions[who_chi])
                 turn = who_chi
                 meld_last_round = True
                 continue

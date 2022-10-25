@@ -1,2 +1,8 @@
+<<<<<<< HEAD
 __pycache__/
 MahjongKit/__pycache__/
+=======
+__pycache__/*.pyc
+MahjongKit/__pycache__/
+__pycache__/
+>>>>>>> 671f946847cc81c81ea3c323f2bcc5b55174a348
