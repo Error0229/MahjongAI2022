@@ -95,9 +95,15 @@ class Round():
         turn = self.game-1
         is_win = False
         is_over = False
+        meld_last_round = False
         while (not self.game_table.no_tile_left() and not is_win and not is_over):
-            draw = self.game_table.draw_tile()
-            self.players[turn].draw_tile(draw)
+            if not meld_last_round:
+                draw = self.game_table.draw_tile()
+                self.players[turn].draw_tile(draw)
+                # action_draw = self.players[turn].action_after_draw()
+                # if action_draw['type'] == 'zimo':
+                #     is_win = True
+
             discard = self.players[turn].discard_tile()
             print(
                 f"Player {turn}, Draw {draw:2}, discard {discard:2}, ", end='')
@@ -121,16 +127,19 @@ class Round():
                 if actions[i]['type'] == 'win':
                     who_win.append(i)
             if who_kan != -1:
-                self.players[who_kan].kan_tile(discard, turn)
+                self.players[who_kan].do_action()
                 turn = who_kan
+                meld_last_round = True
                 continue
             if who_pon != -1:
-                self.players[who_pon].pon_tile(discard, turn)
+                self.players[who_pon].do_action()
                 turn = who_pon
+                meld_last_round = True
                 continue
             if who_chi != -1:
-                self.players[who_chi].chi_tile(discard, turn)
+                self.players[who_chi].do_action()
                 turn = who_chi
+                meld_last_round = True
                 continue
 
             # while (action[0] != -1):

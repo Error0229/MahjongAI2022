@@ -76,7 +76,7 @@ class Player:
         self.tiles.append(action['tile'])
         for tile in action['meld']:
             self.tiles.remove(tile)
-        return self.discard_tile()
+        # return self.discard_tile()
 
     # return {'type':str, 'player':int, 'tile':int, 'meld':[int, int, int]}
     def can_action(self, tile, from_player):
@@ -95,8 +95,8 @@ class Player:
                     if (len(part) == 2 and (part[0] != part[1]) and (part not in melds)):
                         melds.append(part)
             # check every part + tile is in chow
-            melds = filter(lambda x: (
-                sorted(x+tile) in Tile.index_to_chow), melds)
+            melds = list(filter(lambda x: (
+                sorted(x+tile) in Tile.index_to_chow), melds))
             if (len(melds) > 0):
                 ress = []
                 for meld in melds:

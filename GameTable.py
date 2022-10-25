@@ -1,8 +1,6 @@
 import random
 from MahjongKit.MahjongKit import Tile
 from MahjongKit.MahjongKit import Meld
-from Opponents import MahjongAgent
-import Pro
 from Player import Player
 
 
