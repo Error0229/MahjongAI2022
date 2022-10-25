@@ -112,10 +112,10 @@ class Round():
 
             discard = self.players[turn].discard_tile()
             self.game_table.discard_tile(turn, discard)
-            print(
-                f"Player {turn}, Draw {Tile.t34_to_grf(draw):2}, discard {Tile.t34_to_grf(discard):2}, ", end='')
-            print("Tile:", ' '.join(Tile.t34_to_grf(self.players[turn].tiles)), ", Melds :", ' '.join(
-                Tile.t34_to_grf(self.players[turn].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[turn].minkan))}")
+            # print(
+            #     f"Player {turn}, Draw {Tile.t34_to_grf(draw):2}, discard {Tile.t34_to_grf(discard):2}, ", end='')
+            # print("Tile:", ' '.join(Tile.t34_to_grf(self.players[turn].tiles)), ", Melds :", ' '.join(
+            #     Tile.t34_to_grf(self.players[turn].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[turn].minkan))}")
 
             # action: [int:discard]
             # currently need: discard, action_player, need_draw
@@ -179,6 +179,10 @@ class Round():
         # self.round_end(0, 0)
 
     def round_end(self):
+        for i in range(4):
+            print("Tile:", ' '.join(Tile.t34_to_grf(self.players[i].tiles)), ", Melds :", ' '.join(
+                Tile.t34_to_grf(self.players[i].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[i].minkan))}")
+
         if not self.is_win and self.is_over:
             self.honba_sticks += 1
             self.repeat_counter += 1
