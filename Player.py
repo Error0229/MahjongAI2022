@@ -130,8 +130,8 @@ class Player:
                         meld = [(36 if (t == 22) else t) for t in m]
                     else:
                         meld = m
-                    ress.append({'type': 'chi', 'player': self.seat, 'from': from_player,
-                                 'tile': tile, 'meld': meld, 'need_draw': False})
+                    ress.append([{'type': 'chi', 'player': self.seat, 'from': from_player,
+                                 'tile': tile, 'meld': meld, 'need_draw': False}])
                 return ress
         return []
 
