@@ -245,7 +245,19 @@ class Tile:
         :return: a boolean which indicates whether they are of the same type
         """
         return tile34_1 // 9 == tile34_2 // 9
-
+    
+    @staticmethod
+    def convert_bonus(tile34):
+        tiles = []
+        reds = []
+        dic = {34:4, 35:13, 36:22}
+        for i in tile34:
+            if(i==34 or i==35 or i==36):
+                reds.append(i)
+                tiles.append(dic[i])
+            else:
+                tiles.append(i)
+        return {'tiles':sorted(tiles), 'reds':sorted(reds)}
 
 class Meld:
     """
