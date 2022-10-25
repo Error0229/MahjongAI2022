@@ -96,7 +96,7 @@ class Player:
                         melds.append(part)
             # check every part + tile is in chow
             melds = list(filter(lambda x: (
-                sorted(x+tile) in Tile.index_to_chow), melds))
+                sorted(x+[tile]) in Tile.index_to_chow), melds))
             if (len(melds) > 0):
                 ress = []
                 for meld in melds:
