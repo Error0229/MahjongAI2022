@@ -1,5 +1,3 @@
-import enum
-from tabnanny import check
 from MahjongKit.MahjongKit import Tile, Meld, Partition, WinWaitCal
 import random
 
@@ -88,16 +86,20 @@ class Player:
     # only return list of tiles waiting
     def get_waiting(self, is_draw, is_dealer):
         hand = Tile.convert_bonus(self.tiles)
-        bonus_tiles = []
+        bonus_tiles = [34, 35, 36]
         bonus_num = 0
 
         for i in self.tiles:
             if(i in [34, 35, 36]):
                 # bonus_tiles.append(i)
                 bonus_num += 1
+        for _meld in self.open_melds + self.minkan + self.ankan:
+            for _tile in _meld:
+                if(_tile in bonus_tiles):
+                    bonus_num += 1
         for i in self.gameboard.bonus_indicators:
-            bonus_tiles.append(i)
-        bonus_num = len([i for i in hand if i in bonus_tiles])
+            bonus_tiles.append(Tile.ind_to_bonus_dic[i])
+        bonus_num += len([i for i in hand if i in bonus_tiles])
         waiting = WinWaitCal.waiting_calculation(hand, self.open_melds, self.minkan, self.ankan, is_draw, self.seat34, self.wind34,
                                                  self.is_riichi, bonus_num, bonus_tiles, self.gameboard.honba_sticks, self.gameboard.reach_sticks, is_dealer)
         return list(waiting.keys())
@@ -107,18 +109,22 @@ class Player:
         # WIP: currently only check red bonus tiles
         is_zimo = (from_player == self.seat)
         hand = Tile.convert_bonus(self.tiles)
-        bonus_tiles = []
+        bonus_tiles = [34, 35, 36]
         bonus_num = 0
         for i in self.tiles:
             if(i in [34, 35, 36]):
                 # bonus_tiles.append(i)
                 bonus_num += 1
         for i in self.gameboard.bonus_indicators:
-            bonus_tiles.append(i)
+            bonus_tiles.append(Tile.ind_to_bonus_dic[i])
         if is_zimo:
             for i in self.gameboard.hidden_bonus_indicators:
-                bonus_tiles.append(i)
-        bonus_num = len([i for i in hand if i in bonus_tiles])
+                bonus_tiles.append(Tile.ind_to_bonus_dic[i])
+        bonus_num += len([i for i in hand if i in bonus_tiles])
+        for _meld in self.open_melds + self.minkan + self.ankan:
+            for _tile in _meld:
+                if(_tile in bonus_tiles):
+                    bonus_num += 1
         win = WinWaitCal.score_calculation(hand, tile, self.open_melds, self.minkan, self.ankan, is_zimo, self.seat34, self.wind34,
                                            self.is_riichi, bonus_num, bonus_tiles, self.gameboard.honba_sticks, self.gameboard.reach_sticks, is_dealer)
         return win
