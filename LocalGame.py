@@ -23,7 +23,7 @@ class FullGame():
         tmp_players = [Player(self.game_table) for i in range(player_count)]
         for i in range(player_count):
             tmp_players[i].set_seat(i)
-        random.shuffle(tmp_players)
+        # random.shuffle(tmp_players)
         self.players = tmp_players
         # self.round = Round(player_count, tmp_players, 0, 0, 0, 0,0,0)
 
@@ -81,7 +81,7 @@ class Round():
         self.repeat_counter = repeat_counter
         self.reach_sticks = reach_sticks
         self.honba_sticks = honba_sticks
-        self.game_table = GameTable(reach_sticks, honba_sticks)
+        self.game_table = GameTable(wind, game, reach_sticks, honba_sticks)
         for player in self.players:
             player.init_tiles(self.game_table.draw_tile(13))
             player.open_melds = []
@@ -95,8 +95,8 @@ class Round():
     # get discard tile and repeat
 
     def start(self):
-        print("Round Start\n",
-              f'wind : {self.wind}, game : {self.game}\n', '='*30)
+        print(f'Round Start\nwind : {self.wind}, game : {self.game}')
+        print('>'*50)
         turn = self.game-1
         is_win = False
         is_over = False
@@ -148,29 +148,25 @@ class Round():
                 if actions[i]['need_draw']:
                     pass
             if who_win != []:
-                is_win = True
+                self.is_win = True
+                self.is_zimo = False
+                self.win_from_who = turn
                 for player in who_win:
-                    win = self.players[player].get_score(discard, turn, self.game-1)
+                    self.who_win = who_win if who_win != turn else self.who_win
+                    win = self.players[player].get_score(
+                        discard, turn, self.game-1 == player)
                     print('win')
-                    print(f'player:{player}, from:{turn}, score:{win["score"]}, tile:{Tile.t34_to_grf(discard)}')
+                    print(
+                        f'player:{player}, from:{turn}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(discard)}')
                     print("Tile:", ' '.join(Tile.t34_to_grf(self.players[player].tiles)), ", Melds :", ' '.join(
                         Tile.t34_to_grf(self.players[player].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
                     print(f'han:{win["han"]}')
                     print(f'fu:{win["fu"]}')
-                    # partitions = Partition.partition(
-                    #     self.players[player].tiles)
-                    # final_tile = discard
-                    # melds = self.players[player].open_melds
-                    # is_zimo = False
-                    # reach = self.players[player].is_riichi
-                    # han = WinWaitCal.han_calculation(
-                    #     partitions, final_tile, melds, is_zimo, reach, Tile.to_wind[player], Tile.to_wind(turn), reach)
-                    # fu = WinWaitCal.fu_calculation(
-                    #     partitions, final_tile, melds, is_zimo, reach)
-                    # def han_calculation(hand_partition, final_tile, melds, minkan, ankan, is_zimo, player_wind, round_wind, reach)
-                    # def fu_calculation(hand_partition, final_tile, melds, minkan, ankan, is_zimo, player_wind, round_wind):
-                    # def score_calculation_base(han, fu, is_dealer, is_zimo):
-                    #　pass
+                    self.players[player].points += win['score']
+                    self.players[turn].points -= win['score']
+                    self.game_table.points[player] += win['score']
+                    self.game_table.points[turn] -= win['score']
+                return
             for who in [who_kan, who_pon, who_chi]:
                 if who != -1:
                     self.players[who].do_discard_action(actions[who])
@@ -190,6 +186,7 @@ class Round():
 
     def round_end(self):
         for i in range(4):
+            print(f'player {i} score : {self.players[i].points}', end=' ')
             print("Tile:", ' '.join(Tile.t34_to_grf(self.players[i].tiles)), ", Melds :", ' '.join(
                 Tile.t34_to_grf(self.players[i].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[i].minkan))}")
 
@@ -200,11 +197,11 @@ class Round():
                 self.game = (self.game + 1)
                 if self.game == 5 and self.wind != 1:
                     self.wind = (self.wind + 1)
-                    self.game = 0
+                    self.game = 1
             ending_status = {"status": "exhaustive", "wind":  self.wind,
                              "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
         else:
-            if self.who_win == self.game:
+            if self.who_win == self.game - 1:
                 self.repeat_counter += 1
                 self.honba_sticks += 1
                 self.reach_sticks = 0
@@ -216,22 +213,30 @@ class Round():
                 if self.game == 5 and self.wind != 1:
                     self.wind = (self.wind + 1)
                     self.game = 1
-            ending_status = {"status": "Win", "is_zumo": self.is_zumo,
+            ending_status = {"status": "Win", "is_zimo": self.is_zimo,
                              "win_player": self.who_win, "win_from_who": self.win_from_who, "wind":  self.wind, "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
             # WIP probably merge into round class
+        print(f'Round End')
+        print('<'*50)
         return ending_status
 
 
 class GameTable():
 
+    wind = 0
+    game = 0
     bonus_indicators = None
+    hidden_bonus_indicators = None
     remaining_count = 0
     revealed_tiles = None
     tiles = None
     reach_sticks = 0
     honba_sticks = 0
+    points = [0, 0, 0, 0]
 
-    def __init__(self, reach_sticks=0, honba_sticks=0):
+    def __init__(self, wind=-1, game=-1, reach_sticks=0, honba_sticks=0):
+        self.wind = wind
+        self.game = game
         self.tiles = [i for j in range(4) for i in range(34)]
         self.tiles[4] = 34
         self.tiles[13] = 35
@@ -240,10 +245,12 @@ class GameTable():
         # add -1 at the end of tiles, to prevent index error
         self.tiles.append(-1)
         self.bonus_indicators = [self.tiles[9]]
+        self.hidden_bonus_indicators = [self.tiles[8]]
         self.remaining_count = 136
         self.revealed_tiles = [[] for i in range(4)]
         self.reach_sticks = reach_sticks
         self.honba_sticks = honba_sticks
+        self.points = [25000, 25000, 25000, 25000]
 
     def draw_tile(self, num=1):
         '''
