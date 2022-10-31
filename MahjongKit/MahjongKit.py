@@ -245,10 +245,10 @@ class Tile:
         :return: a boolean which indicates whether they are of the same type
         """
         return tile34_1 // 9 == tile34_2 // 9
-    
+
     @staticmethod
     def convert_bonus(tile34):
-        dic = {34:4, 35:13, 36:22}
+        dic = {34: 4, 35: 13, 36: 22}
         res = []
         for i in tile34:
             if(i in dic.keys()):
@@ -1197,6 +1197,7 @@ class WinWaitCal:
                 else:  # 三暗刻
                     kezi = len(ankan) + len([m for m in hand_partition
                                              if len(m) == 3 and m[0] == m[1] and (is_zimo or final_tile != m[0])])
+                    # fix final tile != m[0] -> final_tile == m[0]
                     if kezi == 3:
                         add_han(2, "三暗刻(2Han)")
 
@@ -1565,7 +1566,7 @@ class WinWaitCal:
                 if metrics[3] == 2:
                     possible_tiles.extend(list(range(27, 34)))
             for pt in possible_tiles:
-                #print(possible_tiles)
+                # print(possible_tiles)
                 score_dict = WinWaitCal.score_calculation(hand34, pt, melds, minkan, ankan, is_zimo,
                                                           player_wind, round_wind, reach, bonus_num,
                                                           bonus_tiles, benchan, reach_stick, is_dealer)
