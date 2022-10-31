@@ -1561,10 +1561,11 @@ class WinWaitCal:
             elif 2 in metrics and 1 not in metrics and metrics.count(2) == 2:
                 for i in range(3):
                     if metrics[i] == 2:
-                        possible_tiles.append(list(range(i*9, (i+1)*9)))
+                        possible_tiles.extend(list(range(i*9, (i+1)*9)))
                 if metrics[3] == 2:
-                    possible_tiles.append(list(range(27, 34)))
+                    possible_tiles.extend(list(range(27, 34)))
             for pt in possible_tiles:
+                #print(possible_tiles)
                 score_dict = WinWaitCal.score_calculation(hand34, pt, melds, minkan, ankan, is_zimo,
                                                           player_wind, round_wind, reach, bonus_num,
                                                           bonus_tiles, benchan, reach_stick, is_dealer)

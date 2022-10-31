@@ -14,7 +14,7 @@ class Player:
     open_melds = []
     ankan = []
     minkan = []
-    riichi_status = False
+    is_riichi = False
 
     def __init__(self, gameboard):
         self.tiles = []
@@ -23,7 +23,7 @@ class Player:
         self.gameboard = gameboard
         self.open_melds = []
         self.ankan = []
-        self.riichi_status = False
+        self.is_status = False
 
     def init_tiles(self, tiles):
         self.tiles = tiles
@@ -58,14 +58,11 @@ class Player:
             else:
                 if(new_tile == res['tile']):
                     continue
-                if(min(res['shantin'].values()) < min(check['shantin'].values())):
+                if(min(list(res['shantin'].values())[1::]) < min(list(check['shantin'].values())[1::])):
                     continue
                 else:
                     res = check
         return res
-
-
-
 
     def draw_tile(self, tile):
         self.tiles.append(tile)
@@ -82,21 +79,29 @@ class Player:
         bonus_chr = list(filter(lambda f: f in [self.wind+27, self.seat+27, 31, 32, 33], hand))
         return Partition.shantin_multiple_forms(hand, melds, bonus_chr)
 
-    '''
-    action notes:
-    (these need last tile from another)
-        win:
-        chaken:
-        chi:          discard
-        pon:          discard,                          change_turn
-        minkon: draw, discard, check_stale, open_bonus, change_turn
+    # only return list of tiles waiting
+    def get_waiting(self, is_draw):
+        hand = Tile.convert_bonus(self.tiles)
+        bonus_tiles = []
+        for i in self.tiles:
+            if(i in [34, 35, 36]):
+                bonus_tiles.append(i)
+        waiting = WinWaitCal.waiting_calculation(hand, self.open_melds, self.minkan, self.ankan, is_draw, self.seat, self.wind, 
+                                                 self.is_riichi, len(bonus_tiles), bonus_tiles, 0, 0, False)
+        return list(waiting.keys())
+        # WinWaitCal.waiting_calculation(hand, melds, minkan, ankan, is_zimo, self.seat, self.wind, is_riichi, bonus_num, bonus_tiles, benchan, reach_stick, is_dealer)
 
-    (these need to draw a tile first)
-        zimo:
-        ankon:  draw, discard, check_stale, open_bonus, change_turn
-        riicih:       discard, check_stale
-        none:         discard
-    '''
+    def get_score(self, tile, from_player, is_dealer):
+        # WIP: currently only check red bonus tiles
+        hand = Tile.convert_bonus(self.tiles)
+        bonus_tiles = []
+        for i in self.tiles:
+            if(i in [34, 35, 36]):
+                bonus_tiles.append(i)
+        is_draw = from_player==self.seat
+        win = WinWaitCal.score_calculation(hand, tile, self.open_melds, self.minkan, self.ankan, is_draw, self.seat, self.wind, 
+                                                 self.is_riichi, len(bonus_tiles), bonus_tiles, 0, 0, False)
+        return win
 
     def do_discard_action(self, discard_action):
         # print(discard_action)
@@ -120,12 +125,12 @@ class Player:
         meld:       [int, int, int] (for chi, pon, minkan) ([] if win, draw, none)
         need_draw:  bool (True if draw, minkan)
     '''
-
     def can_discard_action(self, tile, from_player):
+        if(self.can_win(tile, from_player)):
+            return {'type':'win', 'need_draw':False}
         discard_actions = []
         discard_actions += self.can_pon(tile, from_player)
-        discard_actions += self.can_chi(tile, from_player)[0] if len(
-            self.can_chi(tile, from_player)) > 0 else []
+        discard_actions += self.can_chi(tile, from_player)
         discard_actions += self.can_minkan(tile, from_player)
         discard_actions += self.can_draw(tile, from_player)
         return discard_actions[random.randint(0, len(discard_actions)-1)]
@@ -153,8 +158,8 @@ class Player:
                         meld = [(36 if (t == 22) else t) for t in m]
                     else:
                         meld = m
-                    ress.append([{'type': 'chi', 'player': self.seat, 'from': from_player,
-                                 'tile': tile, 'meld': meld, 'need_draw': False}])
+                    ress.append({'type': 'chi', 'player': self.seat, 'from': from_player,
+                                 'tile': tile, 'meld': meld, 'need_draw': False})
                 return ress
         return []
 
@@ -187,7 +192,7 @@ class Player:
             else:
                 meld = [tile, tile, tile, tile]
             return [{'type': 'minkan', 'player': self.seat, 'from': from_player,
-                     'tile': tile, 'meld': meld, 'need_draw': False}]
+                     'tile': tile, 'meld': meld, 'need_draw': True}]
         return []
 
     def can_draw(self, tile, from_player):
@@ -200,9 +205,12 @@ class Player:
     def can_ankan(self, tile):
         pass
 
-    def can_win(self):
-        pass
-
+    # def get_waiting(self, is_draw):
+    def can_win(self, tile, from_player):
+        if(tile in self.get_waiting(from_player == self.seat)):
+            return True
+        return False
+        
     def can_riichi(slef):
         pass
 

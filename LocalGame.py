@@ -101,8 +101,9 @@ class Round():
         is_win = False
         is_over = False
         meld_last_round = False
+        need_draw = True
         while (not self.game_table.no_tile_left() and not is_win and not is_over):
-            if not meld_last_round:
+            if need_draw:
                 draw = self.game_table.draw_tile()
                 self.players[turn].draw_tile(draw)
                 # action_draw = self.players[turn].action_after_draw()
@@ -149,29 +150,38 @@ class Round():
             if who_win != []:
                 is_win = True
                 for player in who_win:
-                    partitions = Partition.partition(
-                        self.players[player].tiles)
-                    final_tile = discard
-                    melds = self.players[player].open_melds
-                    is_zimo = False
-                    reach = self.players[player].riichi_status
-                    han = WinWaitCal.han_calculation(
-                        partitions, final_tile, melds, is_zimo, reach, Tile.to_wind[player], Tile.to_wind(turn), reach)
-                    fu = WinWaitCal.fu_calculation(
-                        partitions, final_tile, melds, is_zimo, reach)
+                    win = self.players[player].get_score(discard, turn, self.game-1)
+                    print('win')
+                    print(f'player:{player}, from:{turn}, score:{win["score"]}, tile:{Tile.t34_to_grf(discard)}')
+                    print("Tile:", ' '.join(Tile.t34_to_grf(self.players[player].tiles)), ", Melds :", ' '.join(
+                        Tile.t34_to_grf(self.players[player].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
+                    print(f'han:{win["han"]}')
+                    print(f'fu:{win["fu"]}')
+                    # partitions = Partition.partition(
+                    #     self.players[player].tiles)
+                    # final_tile = discard
+                    # melds = self.players[player].open_melds
+                    # is_zimo = False
+                    # reach = self.players[player].is_riichi
+                    # han = WinWaitCal.han_calculation(
+                    #     partitions, final_tile, melds, is_zimo, reach, Tile.to_wind[player], Tile.to_wind(turn), reach)
+                    # fu = WinWaitCal.fu_calculation(
+                    #     partitions, final_tile, melds, is_zimo, reach)
                     # def han_calculation(hand_partition, final_tile, melds, minkan, ankan, is_zimo, player_wind, round_wind, reach)
                     # def fu_calculation(hand_partition, final_tile, melds, minkan, ankan, is_zimo, player_wind, round_wind):
                     # def score_calculation_base(han, fu, is_dealer, is_zimo):
-                    pass
+                    #　pass
             for who in [who_kan, who_pon, who_chi]:
                 if who != -1:
                     self.players[who].do_discard_action(actions[who])
                     # print(actions[who])
                     turn = who
                     meld_last_round = True
+                    need_draw = actions[who]['need_draw']
                     break
             if not meld_last_round:
                 turn = (turn + 1) % self.player_count
+                need_draw = True
         self.is_win = 0
         self.is_over = 1
         self.who_win = -1
