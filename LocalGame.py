@@ -30,7 +30,9 @@ class FullGame():
     def game_start(self):
         while (not (self.wind == 1 and self.game == 5)):
             # self.round_number += 1
-            self.round = Round(self.player_count, self.players,
+            self.game_table.set_game_table(
+                self.game, self.wind, self.honba_sticks, self.reach_sticks)
+            self.round = Round(self.game_table, self.player_count, self.players,
                                self.wind, self.game, self.repeat_counter, self.reach_sticks, self.honba_sticks)
             self.round.start()
             end_status = self.round.round_end()
@@ -72,7 +74,7 @@ class Round():
     game = 0
     ending_status = None
 
-    def __init__(self, player_count, players, wind, game, repeat_counter, reach_sticks, honba_sticks):
+    def __init__(self, Game_table, player_count, players, wind, game, repeat_counter, reach_sticks, honba_sticks):
         self.player_count = player_count
         self.players = players
         # self.dealer = round_number % player_count
@@ -81,7 +83,7 @@ class Round():
         self.repeat_counter = repeat_counter
         self.reach_sticks = reach_sticks
         self.honba_sticks = honba_sticks
-        self.game_table = GameTable(wind, game, reach_sticks, honba_sticks)
+        self.game_table = Game_table
         for player in self.players:
             player.init_tiles(self.game_table.draw_tile(13))
             player.open_melds = []
@@ -95,7 +97,8 @@ class Round():
     # get discard tile and repeat
 
     def start(self):
-        print(f'Round Start\nwind : {self.wind}, game : {self.game}')
+        print(
+            f'Round Start\nwind : {self.wind}, game : {self.game}, dora : {Tile.t34_to_grf(Tile.ind_to_bonus_dic[self.game_table.bonus_indicators[0]])}')
         print('>'*50)
         turn = self.game-1
         is_win = False
@@ -185,12 +188,9 @@ class Round():
         # self.round_end(0, 0)
 
     def round_end(self):
-        for i in range(4):
-            print(f'player {i} score : {self.players[i].points}', end=' ')
-            print("Tile:", ' '.join(Tile.t34_to_grf(self.players[i].tiles)), ", Melds :", ' '.join(
-                Tile.t34_to_grf(self.players[i].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[i].minkan))}")
 
         if not self.is_win and self.is_over:
+            print('liuju')
             self.honba_sticks += 1
             self.repeat_counter += 1
             if not self.players[self.game-1].is_tenpai:
@@ -216,6 +216,11 @@ class Round():
             ending_status = {"status": "Win", "is_zimo": self.is_zimo,
                              "win_player": self.who_win, "win_from_who": self.win_from_who, "wind":  self.wind, "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
             # WIP probably merge into round class
+
+        for i in range(4):
+            print(f'player {i} score : {self.players[i].points}', end=' ')
+            print("Tile:", ' '.join(Tile.t34_to_grf(self.players[i].tiles)), ", Melds :", ' '.join(
+                Tile.t34_to_grf(self.players[i].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[i].minkan))}")
         print(f'Round End')
         print('<'*50)
         return ending_status
@@ -251,6 +256,23 @@ class GameTable():
         self.reach_sticks = reach_sticks
         self.honba_sticks = honba_sticks
         self.points = [25000, 25000, 25000, 25000]
+
+    def set_game_table(self, wind=-1, game=-1, reach_sticks=0, honba_sticks=0):
+        self.wind = wind
+        self.game = game
+        self.tiles = [i for j in range(4) for i in range(34)]
+        self.tiles[4] = 34
+        self.tiles[13] = 35
+        self.tiles[22] = 36
+        random.shuffle(self.tiles)
+        # add -1 at the end of tiles, to prevent index error
+        self.tiles.append(-1)
+        self.bonus_indicators = [self.tiles[9]]
+        self.hidden_bonus_indicators = [self.tiles[8]]
+        self.remaining_count = 136
+        self.revealed_tiles = [[] for i in range(4)]
+        self.reach_sticks = reach_sticks
+        self.honba_sticks = honba_sticks
 
     def draw_tile(self, num=1):
         '''
