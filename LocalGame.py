@@ -159,6 +159,8 @@ class Round():
                     win = self.players[player].get_score(
                         discard, turn, self.game-1 == player)
                     print('win')
+                    print("Tile:", ' '.join(Tile.t34_to_grf(self.players[player].tiles)), ", Melds :", ' '.join(
+                        Tile.t34_to_grf(self.players[player].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
                     print(
                         f'player:{player}, from:{turn}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(discard)}')
                     print("Tile:", ' '.join(Tile.t34_to_grf(self.players[player].tiles)), ", Melds :", ' '.join(
@@ -191,7 +193,7 @@ class Round():
 
         if not self.is_win and self.is_over:
             print('liuju')
-            self.honba_sticks += 1
+            # self.honba_sticks += 1
             self.repeat_counter += 1
             if not self.players[self.game-1].is_tenpai:
                 self.game = (self.game + 1)
