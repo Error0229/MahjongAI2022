@@ -252,7 +252,7 @@ class Tile:
         dic = {34: 4, 35: 13, 36: 22}
         res = []
         for i in tile34:
-            if(i in dic.keys()):
+            if (i in dic.keys()):
                 res.append(dic[i])
             else:
                 res.append(i)
