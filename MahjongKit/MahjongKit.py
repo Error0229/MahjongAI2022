@@ -2125,7 +2125,7 @@ class PreProcessing:
                         drop_to[current_player] += 1
                         if bonus_to < len(bonus_indicators):
                             indicator = Tile.his_to_34(
-                                [bonus_indicators[bonus_to]])
+                                bonus_indicators[bonus_to])
                             bonus_to += 1
                             bonus_tiles.append(Tile.bns_ind_bd_dic.get(
                                 indicator, indicator + 1))
@@ -2173,7 +2173,7 @@ class PreProcessing:
                         drop_to[current_player] += 1
                         if bonus_to < len(bonus_indicators):
                             indicator = Tile.his_to_34(
-                                [bonus_indicators[bonus_to]])
+                                bonus_indicators[bonus_to])
                             bonus_to += 1
                             bonus_tiles.append(Tile.bns_ind_bd_dic.get(
                                 indicator, indicator + 1))
@@ -2215,7 +2215,7 @@ class PreProcessing:
                         drop_to[current_player] += 1
                         if bonus_to < len(bonus_indicators):
                             indicator = Tile.his_to_34(
-                                [bonus_indicators[bonus_to]])
+                                bonus_indicators[bonus_to])
                             bonus_to += 1
                             bonus_tiles.append(Tile.bns_ind_bd_dic.get(
                                 indicator, indicator + 1))
@@ -2228,7 +2228,7 @@ class PreProcessing:
                         for i in range(1, 4):
                             ck_player = (current_player + i) % 4
                             if states[ck_player].is_winning(drop34, False):
-                                if (drop[current_player] + 1) == len(log[drop_index]):
+                                if (drop_to[current_player] + 1) == len(log[drop_index]):
                                     states[current_player].a_last_action = states[current_player].a_action
                                     states[current_player].a_action = {
                                         "type": "reach_drop", "tile": drop34}
