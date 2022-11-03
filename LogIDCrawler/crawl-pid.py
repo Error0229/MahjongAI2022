@@ -31,7 +31,7 @@ if __name__ == '__main__':
             if data['playernum'] == '4' and data['sctype'] == 'c':
                 refid = data['url']
                 id_start = refid.find('log=')+4
-                all_log.append({'refid': refid[id_start::]+'\n', 'players': [
+                all_log.append({'refid': refid[id_start::], 'players': [
                                data['player1'], data['player2'], data['player3'], data['player4']]})
         print(f"Player {name}'s data process done")
     print(f'All log size : {len(all_log)}')
