@@ -112,7 +112,7 @@ class Round():
 
                 # check draw action
                 # Anken will need to draw, need 'continue statement'.
-
+                
                 self.players[turn].draw_tile(draw)
                 # action_draw = self.players[turn].action_after_draw()
                 # if action_draw['type'] == 'zimo':
@@ -193,15 +193,10 @@ class Round():
         # self.round_end(0, 0)
 
     def round_end(self):
-
         if not self.is_win and self.is_over:
             print('liuju')
             for i in range(4):
-                print(
-                    f'player {i}, Wind : {Tile.t34_to_grf(self.players[i].wind34)}  score : {self.players[i].points}', end=' ')
-                print("Tile:", ' '.join(Tile.t34_to_grf(self.players[i].tiles)), ", Melds :", ' '.join(
-                    Tile.t34_to_grf(self.players[i].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[i].minkan))}")
-
+                self.players[i].display()
             # self.honba_sticks += 1
             self.repeat_counter += 1
             if not self.players[self.game-1].is_tenpai:
@@ -217,10 +212,7 @@ class Round():
                                  "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
         else:
             for i in range(4):
-                print(
-                    f'player {i}, Wind : {Tile.t34_to_grf(self.players[i].wind34)}  score : {self.players[i].points}', end=' ')
-                print("Tile:", ' '.join(Tile.t34_to_grf(self.players[i].tiles)), ", Melds :", ' '.join(
-                    Tile.t34_to_grf(self.players[i].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[i].minkan))}")
+                self.players[i].display()
 
             if self.who_win == self.game - 1:
                 self.repeat_counter += 1

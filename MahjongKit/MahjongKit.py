@@ -248,7 +248,7 @@ class Tile:
         return tile34_1 // 9 == tile34_2 // 9
 
     @staticmethod
-    def convert_bonus(tile34):
+    def convert_bonuses(tile34):
         dic = {34: 4, 35: 13, 36: 22}
         res = []
         for i in tile34:
@@ -257,6 +257,12 @@ class Tile:
             else:
                 res.append(i)
         return res
+
+    def convert_bonus(tile34):
+        dic = {34: 4, 35: 13, 36: 22}
+        if(tile34 in dic.keys()):
+            return dic[tile34]
+        return tile34
 
 
 class Meld:
