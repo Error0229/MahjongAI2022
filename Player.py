@@ -161,6 +161,9 @@ class Player:
         zimo, ankan, riichi, none
     '''
     def can_discard_action(self, tile, from_player):
+        if(self.seat == from_player):
+            return {'type': 'none', 'player': self.seat, 'from': from_player, 'tile': tile,
+                'meld': [], 'need_draw':False}
         discard_actions = self.can_win(tile, from_player)       # add win
         if(discard_actions != []):
             return discard_actions[0]

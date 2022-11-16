@@ -121,15 +121,27 @@ class Round():
             need_draw = True
             discard = self.players[turn].discard_tile()
             self.game_table.discard_tile(turn, discard)
-            # print(
-            #     f"Player {turn}, Draw {Tile.t34_to_grf(draw):2}, discard {Tile.t34_to_grf(discard):2}, ", end='')
-            # print("Tile:", ' '.join(Tile.t34_to_grf(self.players[turn].tiles)), ", Melds :", ' '.join(
-            #     Tile.t34_to_grf(self.players[turn].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[turn].minkan))}")
+            
 
-            # action: [int:discard]
-            # currently need: discard, action_player, need_draw
-            # actions = [self.players[i].can_discard_action(
-            #     discard, turn) for i in range(self.player_count)]  # player draw func
+            who_pon = -1
+            who_kan = -1
+            who_chi = -1
+            who_win = []
+            actions = self.get_discard_action(discard, turn)
+            if(actions[0]['type']=='win'):
+                who_win = [action['player'] for action in actions]
+            else:
+                action = actions[0]
+                if(action['type']=='minkan'):
+                    who_kan = action['player']
+                if(action['type']=='pon'):
+                    who_pon = action['player']
+                if(action['type']=='chi'):
+                    who_chi = action['player']
+                if(action['type']=='draw'):
+                    pass
+            
+            '''
             actions = []
             for i in range(4):
                 if i != turn:
@@ -142,6 +154,7 @@ class Round():
             who_kan = -1
             who_chi = -1
             who_win = []
+            
             for i in range(self.player_count):
                 if i == turn:
                     continue
@@ -155,6 +168,9 @@ class Round():
                     who_win.append(i)
                 if actions[i]['need_draw']:
                     pass
+            '''
+
+            # process win 
             if who_win != []:
                 self.is_win = True
                 self.is_zimo = False
@@ -164,33 +180,64 @@ class Round():
                     win = self.players[player].get_score(
                         discard, turn, self.game-1 == player)
                     print('win')
-                    print("Tile:", ' '.join(Tile.t34_to_grf(self.players[player].tiles)), ", Melds :", ' '.join(
-                        Tile.t34_to_grf(self.players[player].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
-                    print(
-                        f'player:{player}, from:{turn}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(discard)}')
-                    print(f'han:{win["han"]}')
-                    print(f'fu:{win["fu"]}')
+                    print(f"Tile: {' '.join(Tile.t34_to_grf(self.players[player].tiles))}", end=' , ')
+                    print(f"Melds: {' '.join(Tile.t34_to_grf(self.players[player].open_melds))}", end=' , ')
+                    print(f"minkans: {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
+                    print(f'player:{player}, from:{turn}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(discard)}')
+                    print(f'han: {win["han"]}, fu: {win["fu"]}')
                     self.players[player].points += win['score']
                     self.players[turn].points -= win['score']
                     self.game_table.points[player] += win['score']
                     self.game_table.points[turn] -= win['score']
                 return
+
+            # process discard action 
             for who in [who_kan, who_pon, who_chi]:
                 if who != -1:
-                    self.players[who].do_discard_action(actions[who])
+                    self.players[who].do_discard_action(action)
                     # print(actions[who])
                     turn = who
                     meld_last_round = True
-                    need_draw = actions[who]['need_draw']
+                    need_draw = action['need_draw']
                     break
             if not meld_last_round:
                 turn = (turn + 1) % self.player_count
                 need_draw = True
+        
         self.is_win = 0
         self.is_over = 1
         self.who_win = -1
         self.win_from_who = -1
         # self.round_end(0, 0)
+
+    # choose a list discard actions
+    def get_discard_action(self, discard, turn):
+        dic = {'win':5, 'minkan':4, 'pon':3, 'chi':2, 'draw':1, 'none':0}
+        actions  = [self.players[0].can_discard_action(discard, turn)]
+        actions += [self.players[1].can_discard_action(discard, turn)]
+        actions += [self.players[2].can_discard_action(discard, turn)]
+        actions += [self.players[3].can_discard_action(discard, turn)]
+        print(actions)
+        res = [actions[0]]
+        for action in actions:
+            if(dic[action['type']] > dic[res[0]['type']]):
+                res = [action]
+            elif(dic[action['type']] == dic[res[0]['type']]):
+                res += action
+        return res
+    
+    def process_win(self, action):
+        pass
+
+
+    def process_discard_action(self, action):
+        if(action['type'] == 'draw'):
+            turn = (turn + 1) % self.player_count
+        else:
+            turn = action['player']
+        need_draw = action['need_draw']
+            
+
 
     def round_end(self):
         if not self.is_win and self.is_over:
