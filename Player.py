@@ -129,6 +129,34 @@ class Player:
                                            self.is_riichi, bonus_num, bonus_tiles, self.gameboard.honba_sticks, self.gameboard.reach_sticks, is_dealer)
         return win
 
+
+    '''
+    action dict contain:
+        type:       str (win, chi, pon, minkan, draw, none, ... )
+        player:     int (player who do the action)
+        from:       int (discard tile form the player / draw tile from self)
+        tile:       int (discard tile)
+        meld:       [int, int, int] (for chi, pon, minkan) ([] if win, draw, none)
+        need_draw:  bool (True if draw, minkan)
+    
+    discard_action:
+        win, minkan, pon, chi, draw, none
+    
+    draw_action:
+        zimo, ankan, riichi, none
+    '''
+
+    # discard_action : win, 
+    def can_discard_action(self, tile, from_player):
+        discard_actions = self.can_win(tile, from_player)       # add win
+        if(discard_actions != []):
+            return discard_actions[0]
+        discard_actions += self.can_pon(tile, from_player)      # add pon
+        discard_actions += self.can_chi(tile, from_player)      # add chi
+        discard_actions += self.can_minkan(tile, from_player)   # add minkan
+        discard_actions += self.can_draw(tile, from_player)     # add draw/none
+        return random.choice(discard_actions)
+
     def do_discard_action(self, discard_action):
         # print(discard_action)
         if (discard_action['type'] == 'chi' or discard_action['type'] == 'pon'):
@@ -141,26 +169,10 @@ class Player:
         for tile in discard_action['meld']:
             self.tiles.remove(tile)
 
-    '''
-    CATJAM READS THIS
-    discard_action dict contain:
-        type:       str (win, chi, pon, minkan, draw, none)
-        player:     int (player who do the action)
-        from:       int (discard tile form the player)
-        tile:       int (discard tile)
-        meld:       [int, int, int] (for chi, pon, minkan) ([] if win, draw, none)
-        need_draw:  bool (True if draw, minkan)
-    '''
-
-    def can_discard_action(self, tile, from_player):
-        if(self.can_win(tile, from_player)):
-            return {'type': 'win', 'need_draw': False}
-        discard_actions = []
-        discard_actions += self.can_pon(tile, from_player)
-        discard_actions += self.can_chi(tile, from_player)
-        discard_actions += self.can_minkan(tile, from_player)
-        discard_actions += self.can_draw(tile, from_player)
-        return discard_actions[random.randint(0, len(discard_actions)-1)]
+    def can_win(self, tile, from_player):
+        if(tile in self.get_waiting(False, self.gameboard.game-1 == self.seat)):
+            return [{'type': 'win', 'need_draw': False}]
+        return []
 
     def can_chi(self, tile, from_player):
         if ((self.seat - from_player) % 4 == 1):
@@ -229,14 +241,23 @@ class Player:
         return [{'type': 'none', 'player': self.seat, 'from': from_player, 'tile': tile,
                 'meld': [], 'need_draw':False}]
 
+
+    def can_draw_action(self, tile):
+        draw_actions = self.can_zimo(tile)
+        if(draw_actions != []):
+            return draw_actions[0]
+        return random.choice(draw_actions)
+
+    def do_draw_action(self, action):
+        pass
+    
+    def can_zimo(self, tile, from_player):
+        if(tile in self.get_waiting(True, self.gameboard.game-1 == self.seat)):
+            return [{'type': 'zimo', 'need_draw': False}]
+        return []
+    
     def can_ankan(self, tile):
         pass
-
-    # def get_waiting(self, is_draw):
-    def can_win(self, tile, from_player):
-        if(tile in self.get_waiting(from_player == self.seat, self.gameboard.game-1 == self.seat)):
-            return True
-        return False
 
     def can_riichi(slef):
         pass
@@ -244,5 +265,3 @@ class Player:
     @ property
     def is_tenpai(self):
         return False
-#[{'type': 'pon', 'player': 3, 'from': 1, 'tile': 17, 'meld': [17, 17, 17], 'need_draw': False}, {'type': 'minkan', 'player': 3, 'from': 1, 'tile': 17, 'meld': [17, 17, 17, 17], 'need_draw': False}, {'type': 'none', 'player': 3, 'from': 1, 'tile': 17, 'meld': [], 'need_draw': False}]
-# [{'type': 'pon', 'player': 1, 'from': 2, 'tile': 23, 'meld': [23, 23, 23], 'need_draw': False}, {'type': 'minkan', 'player': 1, 'from': 2, 'tile': 23, 'meld': [23, 23, 23, 23], 'need_draw': False}, {'type': 'none', 'player': 1, 'from': 2, 'tile': 23, 'meld': [], 'need_draw': False}]
