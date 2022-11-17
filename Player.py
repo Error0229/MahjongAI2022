@@ -254,7 +254,7 @@ class Player:
 
     def can_win(self, tile, from_player):
         if (tile in self.get_waiting(False, self.gameboard.game-1 == self.seat)):
-            return [{'type':'win', 'player':self.seat, 'from':from_player, 'need_draw':False}]
+            return [{'type':'win', 'player':self.seat, 'from':from_player, 'need_draw':False, 'tile':tile}]
         return []
 
 
