@@ -264,6 +264,7 @@ class Player:
             return draw_actions[0]
         draw_actions += self.can_ankan(tile)
         draw_actions += self.can_riichi(tile)
+        draw_actions += [{'type':'discard'}]
         return random.choice(draw_actions)
 
     def do_draw_action(self, action):
@@ -288,14 +289,14 @@ class Player:
     def can_riichi(self, tile):
         hand = copy.deepcopy(self.tiles)
         hand.append(tile)
-        check = self.to_discard_tile(hand)
+        check = self.to_discard_tile()
         if(0 in list(check['shantin'].values())[1::]):
             return [{'type':'riichi', 'player':self.seat, 'from':self.seat, 'tile':tile, 'need_draw':False}]
         return []
 
     def can_zimo(self, tile):
-        if (tile in self.get_waiting(False, self.gameboard.game-1 == self.seat)):
-            return [{'type':'zimo', 'player':self.seat, 'from':self.seat, 'need_draw':False}]
+        if (tile in self.get_waiting(True, self.gameboard.game-1 == self.seat)):
+            return [{'type':'zimo', 'player':self.seat, 'from':self.seat, 'tile':tile, 'need_draw':False}]
         return []        
 
     @ property

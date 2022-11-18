@@ -108,13 +108,21 @@ class Round():
         while (not self.game_table.no_tile_left() and not is_win and not is_over):
             if need_draw:
                 draw = self.game_table.draw_tile()
-
-                # check draw action
-                # Anken will need to draw, need 'continue statement'.
+                action = self.players[turn].can_draw_action(draw)
                 
+                if(action['type']=='zimo'):
+                    self.process_zimo(action)
+                    self.who_win = turn
+                    self.is_win = True
+                    self.is_zimo = True
+                    self.win_from_who = turn
+                    return
+                elif(action['type']=='ankan'):
+                    pass
+                elif(action['type']=='riichi'):
+                    pass
                 self.players[turn].draw_tile(draw)
-
-            
+                
             discard = self.players[turn].discard_tile()
             self.game_table.discard_tile(turn, discard)
 
@@ -176,7 +184,28 @@ class Round():
             self.game_table.points[player] += win['score']
             self.game_table.points[from_player] -= win['score']
         
-
+    def process_zimo(self, action):
+            other_players = [0, 1, 2, 3]
+            player = other_players.pop(action['player'])
+            tile = action['tile']
+            dealer = self.game-1
+            win = self.players[player].get_score(tile, player, dealer == player)
+            print('zimo')
+            print(f"Tile: {' '.join(Tile.t34_to_grf(self.players[player].tiles))}", end=' , ')
+            print(f"Melds: {' '.join(Tile.t34_to_grf(self.players[player].open_melds))}", end=' , ')
+            print(f"minkans: {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
+            print(f'player:{player}, from:{player}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(tile)}')
+            print(f'han: {win["han"]}, fu: {win["fu"]}')
+            self.players[player].points += win['score']
+            self.game_table.points[player] += win['score']
+            for other_player in other_players:
+                if(other_player == dealer):
+                    self.players[other_player].points -= win['zimo_lose']['dealer']
+                    self.game_table.points[other_player] -= win['zimo_lose']['dealer']
+                else:
+                    self.players[other_player].points -= win['zimo_lose']['other']
+                    self.game_table.points[other_player] -= win['zimo_lose']['other']
+                
     def round_end(self):
         if not self.is_win and self.is_over:
             print('liuju')
@@ -301,3 +330,4 @@ if __name__ == '__main__':
     game = FullGame(4)
     game.game_start()
     print("Game over.")
+
