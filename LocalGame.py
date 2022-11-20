@@ -23,6 +23,7 @@ class FullGame():
         tmp_players = [Player(self.game_table) for i in range(player_count)]
         for i in range(player_count):
             tmp_players[i].set_seat(i)
+            tmp_players[i].set_wind(i)
         # random.shuffle(tmp_players)
         self.players = tmp_players
         # self.round = Round(player_count, tmp_players, 0, 0, 0, 0,0,0)
@@ -103,96 +104,122 @@ class Round():
         turn = self.game-1
         is_win = False
         is_over = False
-        meld_last_round = False
         need_draw = True
         while (not self.game_table.no_tile_left() and not is_win and not is_over):
             if need_draw:
                 draw = self.game_table.draw_tile()
+                action = self.players[turn].can_draw_action(draw)
+
+                if(action['type'] == 'zimo'):
+                    self.process_zimo(action)
+                    self.who_win = turn
+                    self.is_win = True
+                    self.is_zimo = True
+                    self.win_from_who = turn
+                    return
+                elif(action['type'] == 'ankan'):
+                    pass
+                elif(action['type'] == 'riichi'):
+                    pass
                 self.players[turn].draw_tile(draw)
-                # action_draw = self.players[turn].action_after_draw()
-                # if action_draw['type'] == 'zimo':
-                #     is_win = True
-            meld_last_round = False
 
             discard = self.players[turn].discard_tile()
             self.game_table.discard_tile(turn, discard)
-            # print(
-            #     f"Player {turn}, Draw {Tile.t34_to_grf(draw):2}, discard {Tile.t34_to_grf(discard):2}, ", end='')
-            # print("Tile:", ' '.join(Tile.t34_to_grf(self.players[turn].tiles)), ", Melds :", ' '.join(
-            #     Tile.t34_to_grf(self.players[turn].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[turn].minkan))}")
 
-            # action: [int:discard]
-            # currently need: discard, action_player, need_draw
-            # actions = [self.players[i].can_discard_action(
-            #     discard, turn) for i in range(self.player_count)]  # player draw func
-            actions = []
-            for i in range(4):
-                if i != turn:
-                    actions.append(self.players[i].can_discard_action(
-                        discard, turn))
-                else:
-                    actions.append({})
-            # print(actions)
-            who_pon = -1
-            who_kan = -1
-            who_chi = -1
-            who_win = []
-            for i in range(self.player_count):
-                if i == turn:
-                    continue
-                if actions[i]['type'] == 'pon':
-                    who_pon = i
-                if actions[i]['type'] == 'minkan':
-                    who_kan = i
-                if actions[i]['type'] == 'chi':
-                    who_chi = i
-                if actions[i]['type'] == 'win':
-                    who_win.append(i)
-                if actions[i]['need_draw']:
-                    pass
-            if who_win != []:
+            actions = self.get_discard_action(discard, turn)
+            if(actions[0]['type'] == 'win'):
+                # process win
+                self.process_win(actions)
+                self.who_win = [action['player'] for action in actions]
                 self.is_win = True
                 self.is_zimo = False
                 self.win_from_who = turn
-                for player in who_win:
-                    self.who_win = who_win if who_win != turn else self.who_win
-                    win = self.players[player].get_score(
-                        discard, turn, self.game-1 == player)
-                    print('win')
-                    print("Tile:", ' '.join(Tile.t34_to_grf(self.players[player].tiles)), ", Melds :", ' '.join(
-                        Tile.t34_to_grf(self.players[player].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
-                    print(
-                        f'player:{player}, from:{turn}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(discard)}')
-                    print("Tile:", ' '.join(Tile.t34_to_grf(self.players[player].tiles)), ", Melds :", ' '.join(
-                        Tile.t34_to_grf(self.players[player].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
-                    print(f'han:{win["han"]}')
-                    print(f'fu:{win["fu"]}')
-                    self.players[player].points += win['score']
-                    self.players[turn].points -= win['score']
-                    self.game_table.points[player] += win['score']
-                    self.game_table.points[turn] -= win['score']
                 return
-            for who in [who_kan, who_pon, who_chi]:
-                if who != -1:
-                    self.players[who].do_discard_action(actions[who])
-                    # print(actions[who])
-                    turn = who
-                    meld_last_round = True
-                    need_draw = actions[who]['need_draw']
-                    break
-            if not meld_last_round:
-                turn = (turn + 1) % self.player_count
-                need_draw = True
+            else:
+                # process discard action
+                turn, need_draw = self.process_discard_action(actions[0])
+
         self.is_win = 0
         self.is_over = 1
         self.who_win = -1
         self.win_from_who = -1
         # self.round_end(0, 0)
 
-    def round_end(self):
+    # choose a list discard actions
+    def get_discard_action(self, discard, turn):
+        dic = {'win': 5, 'minkan': 4, 'pon': 3, 'chi': 2, 'draw': 1, 'none': 0}
+        res = [self.players[0].can_discard_action(discard, turn)]
+        for i in range(1, 4):
+            action = self.players[i].can_discard_action(discard, turn)
+            if(dic[action['type']] > dic[res[0]['type']]):
+                res = [action]
+            elif(dic[action['type']] == dic[res[0]['type']]):
+                res += action
+        return res
 
+    # process minkan, chi, pon
+    # return (turn, need_draw)
+    def process_discard_action(self, action):
+        if(action['type'] in ['minkan', 'pon', 'chi']):
+            self.players[action['player']].do_discard_action(action)
+            return (action['player'], action['need_draw'])
+        else:
+            turn = (action['player'] + 1) % self.player_count
+            return (turn, action['need_draw'])
+
+    def process_win(self, actions):
+        for action in actions:
+            player = action['player']
+            from_player = action['from']
+            tile = action['tile']
+            win = self.players[player].get_score(
+                tile, from_player, self.game-1 == player)
+            print('win')
+            print(
+                f"Tile: {' '.join(Tile.t34_to_grf(self.players[player].tiles))}", end=' , ')
+            print(
+                f"Melds: {' '.join(Tile.t34_to_grf(self.players[player].open_melds))}", end=' , ')
+            print(
+                f"minkans: {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
+            print(
+                f'player:{player}, from:{from_player}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(tile)}')
+            print(f'han: {win["han"]}, fu: {win["fu"]}')
+            self.players[player].points += win['score']
+            self.players[from_player].points -= win['score']
+            self.game_table.points[player] += win['score']
+            self.game_table.points[from_player] -= win['score']
+
+    def process_zimo(self, action):
+        other_players = [0, 1, 2, 3]
+        player = other_players.pop(action['player'])
+        tile = action['tile']
+        dealer = self.game-1
+        win = self.players[player].get_score(tile, player, dealer == player)
+        print('zimo')
+        print(
+            f"Tile: {' '.join(Tile.t34_to_grf(self.players[player].tiles))}", end=' , ')
+        print(
+            f"Melds: {' '.join(Tile.t34_to_grf(self.players[player].open_melds))}", end=' , ')
+        print(
+            f"minkans: {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
+        print(
+            f'player:{player}, from:{player}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(tile)}')
+        print(f'han: {win["han"]}, fu: {win["fu"]}')
+        self.players[player].points += win['score']
+        self.game_table.points[player] += win['score']
+        for other_player in other_players:
+            if(other_player == dealer):
+                self.players[other_player].points -= win['zimo_lose']['dealer']
+                self.game_table.points[other_player] -= win['zimo_lose']['dealer']
+            else:
+                self.players[other_player].points -= win['zimo_lose']['other']
+                self.game_table.points[other_player] -= win['zimo_lose']['other']
+
+    def round_end(self):
         if not self.is_win and self.is_over:
             print('liuju')
+            for i in range(4):
+                self.players[i].display()
             # self.honba_sticks += 1
             self.repeat_counter += 1
             if not self.players[self.game-1].is_tenpai:
@@ -200,9 +227,16 @@ class Round():
                 if self.game == 5 and self.wind != 1:
                     self.wind = (self.wind + 1)
                     self.game = 1
-            ending_status = {"status": "exhaustive", "wind":  self.wind,
-                             "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
+                for player in self.players:
+                    player.set_wind(player.seat + 1 - self.game if player.seat +
+                                    1 - self.game >= 0 else player.seat +
+                                    1 - self.game + 4)
+                ending_status = {"status": "exhaustive", "wind":  self.wind,
+                                 "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
         else:
+            for i in range(4):
+                self.players[i].display()
+
             if self.who_win == self.game - 1:
                 self.repeat_counter += 1
                 self.honba_sticks += 1
@@ -215,14 +249,14 @@ class Round():
                 if self.game == 5 and self.wind != 1:
                     self.wind = (self.wind + 1)
                     self.game = 1
+                for player in self.players:
+                    player.set_wind(player.seat + 1 - self.game if player.seat +
+                                    1 - self.game >= 0 else player.seat +
+                                    1 - self.game + 4)
             ending_status = {"status": "Win", "is_zimo": self.is_zimo,
                              "win_player": self.who_win, "win_from_who": self.win_from_who, "wind":  self.wind, "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
             # WIP probably merge into round class
 
-        for i in range(4):
-            print(f'player {i} score : {self.players[i].points}', end=' ')
-            print("Tile:", ' '.join(Tile.t34_to_grf(self.players[i].tiles)), ", Melds :", ' '.join(
-                Tile.t34_to_grf(self.players[i].open_melds)), f"minkans : {' '.join(Tile.t34_to_grf(self.players[i].minkan))}")
         print(f'Round End')
         print('<'*50)
         return ending_status

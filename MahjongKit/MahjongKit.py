@@ -2,6 +2,7 @@
 import json
 import random
 from copy import deepcopy
+import re
 
 import os
 
@@ -248,7 +249,7 @@ class Tile:
         return tile34_1 // 9 == tile34_2 // 9
 
     @staticmethod
-    def convert_bonus(tile34):
+    def convert_bonuses(tile34):
         dic = {34: 4, 35: 13, 36: 22}
         res = []
         for i in tile34:
@@ -257,6 +258,12 @@ class Tile:
             else:
                 res.append(i)
         return res
+
+    def convert_bonus(tile34):
+        dic = {34: 4, 35: 13, 36: 22}
+        if(tile34 in dic.keys()):
+            return dic[tile34]
+        return tile34
 
 
 class Meld:
@@ -1410,6 +1417,7 @@ class WinWaitCal:
             return None
         b_score, b_score_desc, b_han, b_han_desc, b_fu, b_fu_desc, b_par = 0, None, None, None, None, None, None
         bonus_num += final_tile in bonus_tiles
+        zimo_lose = dict()
         for p in win_partitions:
             han_dict = WinWaitCal.han_calculation(
                 p, final_tile, melds, minkan, ankan, is_zimo, player_wind, round_wind, reach)
@@ -1435,6 +1443,17 @@ class WinWaitCal:
                 fu = fu_dict["fu_round"]
                 base_point, lose_desc = WinWaitCal.score_calculation_base(
                     han_dict["han_sum"] + bonus_num, fu, is_dealer, is_zimo)
+
+                zimo_lose['is_zimo'] = is_zimo
+                if(is_zimo):
+                    if('n' in lose_desc):
+                        tmp_lose_desc = lose_desc.split('n')[1]
+                    else:
+                        tmp_lose_desc = lose_desc
+                    tmp = re.findall('[0-9]+', tmp_lose_desc)
+                    zimo_lose['other'] = int(tmp[0])
+                    zimo_lose['dealer'] = 0 if(is_dealer) else int(tmp[1])
+
                 final_score = base_point + 1000 * reach_stick + \
                     benchan * (300 if base_point > 0 else 0)
                 score_cal_desc = "{}Fu/{}Han --> {} {}点".format(
@@ -1463,6 +1482,7 @@ class WinWaitCal:
             res["fu"] = b_fu
             res["fu_desc"] = b_fu_desc
             res["partition"] = b_par
+            res["zimo_lose"] = zimo_lose
             return res
 
     @staticmethod

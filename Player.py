@@ -1,10 +1,12 @@
+from hashlib import new
 from MahjongKit.MahjongKit import Tile, Meld, Partition, WinWaitCal
 import random
-
+import copy
 
 class Player:
     wind = 0
     wind34 = 0
+    selfwind = 0
     seat = 0
     seat34 = 0
     tiles = []
@@ -51,17 +53,23 @@ class Player:
 
     # return {'tile':int, 'shantin':dic}
     def to_discard_tile(self):
+        is_check = [False for i in range(34)]
         res = None
         for id in range(len(self.tiles)):
-            hand = [i for i in self.tiles]
+            hand = copy.deepcopy(self.tiles)
             new_tile = hand.pop(id)
+            if (is_check[Tile.convert_bonus(new_tile)]):
+                # perfer to discard the normal tile over bonus tile
+                if(Tile.convert_bonus(new_tile) == Tile.convert_bonus(res['tile'])):
+                    res['tile'] = Tile.convert_bonus(new_tile)
+                continue
+            else:
+                is_check[Tile.convert_bonus(new_tile)] = True
             check = {'tile': new_tile, 'shantin': self.get_shantin(hand)}
-            if(res == None):
+            if (res == None):
                 res = check
             else:
-                if(new_tile == res['tile']):
-                    continue
-                if(min(list(res['shantin'].values())[1::]) < min(list(check['shantin'].values())[1::])):
+                if (min(list(res['shantin'].values())[1::]) < min(list(check['shantin'].values())[1::])):
                     continue
                 else:
                     res = check
@@ -71,13 +79,21 @@ class Player:
         self.tiles.append(tile)
         self.tiles.sort()
 
+    def display(self):
+        print(f'player {self.seat}, Wind: {Tile.t34_to_grf(self.wind34)}', end=' , ')
+        print(f'score: {self.points}', end=' , ')
+        str_tile   = f"Tile: {' '.join(Tile.t34_to_grf(self.tiles))}"
+        str_meld   = f"Melds: {' '.join(Tile.t34_to_grf(self.open_melds))}"
+        str_minkan = f"minkans: {' '.join(Tile.t34_to_grf(self.minkan))}"
+        print(f"{str_tile:<31} , {str_meld:<20} , {str_minkan:<20}")
+
     def get_shantin(self, new_tiles=None, new_meld=[]):
-        if(new_tiles == None):
+        if (new_tiles == None):
             hand = self.tiles
         else:
             hand = new_tiles
         melds = self.open_melds
-        if(new_meld != []):
+        if (new_meld != []):
             melds.append(new_meld)
         bonus_chr = list(
             filter(lambda f: f in [self.wind+27, self.seat+27, 31, 32, 33], hand))
@@ -85,17 +101,17 @@ class Player:
 
     # only return list of tiles waiting
     def get_waiting(self, is_draw, is_dealer):
-        hand = Tile.convert_bonus(self.tiles)
+        hand = Tile.convert_bonuses(self.tiles)
         bonus_tiles = [34, 35, 36]
         bonus_num = 0
 
         for i in self.tiles:
-            if(i in [34, 35, 36]):
+            if (i in [34, 35, 36]):
                 # bonus_tiles.append(i)
                 bonus_num += 1
         for _meld in self.open_melds + self.minkan + self.ankan:
             for _tile in _meld:
-                if(_tile in bonus_tiles):
+                if (_tile in bonus_tiles):
                     bonus_num += 1
         for i in self.gameboard.bonus_indicators:
             bonus_tiles.append(Tile.ind_to_bonus_dic[i])
@@ -108,11 +124,11 @@ class Player:
     def get_score(self, tile, from_player, is_dealer):
         # WIP: currently only check red bonus tiles
         is_zimo = (from_player == self.seat)
-        hand = Tile.convert_bonus(self.tiles)
+        hand = Tile.convert_bonuses(self.tiles)
         bonus_tiles = [34, 35, 36]
         bonus_num = 0
         for i in self.tiles:
-            if(i in [34, 35, 36]):
+            if (i in [34, 35, 36]):
                 # bonus_tiles.append(i)
                 bonus_num += 1
         for i in self.gameboard.bonus_indicators:
@@ -123,11 +139,39 @@ class Player:
         bonus_num += len([i for i in hand if i in bonus_tiles])
         for _meld in self.open_melds + self.minkan + self.ankan:
             for _tile in _meld:
-                if(_tile in bonus_tiles):
+                if (_tile in bonus_tiles):
                     bonus_num += 1
         win = WinWaitCal.score_calculation(hand, tile, self.open_melds, self.minkan, self.ankan, is_zimo, self.seat34, self.wind34,
                                            self.is_riichi, bonus_num, bonus_tiles, self.gameboard.honba_sticks, self.gameboard.reach_sticks, is_dealer)
         return win
+
+    '''
+    action dict contain:
+        type:       str (win, chi, pon, minkan, draw, none, ... )
+        player:     int (player who do the action)
+        from:       int (discard tile form the player / draw tile from self)
+        tile:       int (discard tile)
+        meld:       [int, int, int] (for chi, pon, minkan) ([] if win, draw, none)
+        need_draw:  bool (True if draw, minkan)
+    
+    discard_action:
+        win, minkan, pon, chi, draw, none
+    
+    draw_action:
+        zimo, ankan, riichi, none
+    '''
+    def can_discard_action(self, tile, from_player):
+        if(self.seat == from_player):
+            return {'type': 'none', 'player': self.seat, 'from': from_player, 'tile': tile,
+                'meld': [], 'need_draw':False}
+        discard_actions = self.can_win(tile, from_player)       # add win
+        if(discard_actions != []):
+            return discard_actions[0]
+        discard_actions += self.can_pon(tile, from_player)      # add pon
+        discard_actions += self.can_chi(tile, from_player)      # add chi
+        discard_actions += self.can_minkan(tile, from_player)   # add minkan
+        discard_actions += self.can_draw(tile, from_player)     # add draw/none
+        return random.choice(discard_actions)
 
     def do_discard_action(self, discard_action):
         # print(discard_action)
@@ -141,31 +185,10 @@ class Player:
         for tile in discard_action['meld']:
             self.tiles.remove(tile)
 
-    '''
-    CATJAM READS THIS
-    discard_action dict contain:
-        type:       str (win, chi, pon, minkan, draw, none)
-        player:     int (player who do the action)
-        from:       int (discard tile form the player)
-        tile:       int (discard tile)
-        meld:       [int, int, int] (for chi, pon, minkan) ([] if win, draw, none)
-        need_draw:  bool (True if draw, minkan)
-    '''
-
-    def can_discard_action(self, tile, from_player):
-        if(self.can_win(tile, from_player)):
-            return {'type': 'win', 'need_draw': False}
-        discard_actions = []
-        discard_actions += self.can_pon(tile, from_player)
-        discard_actions += self.can_chi(tile, from_player)
-        discard_actions += self.can_minkan(tile, from_player)
-        discard_actions += self.can_draw(tile, from_player)
-        return discard_actions[random.randint(0, len(discard_actions)-1)]
-
     def can_chi(self, tile, from_player):
         if ((self.seat - from_player) % 4 == 1):
             melds = []
-            convert_tile = Tile.convert_bonus([tile])[0]
+            convert_tile = Tile.convert_bonus(tile)
             for parts in Partition.partition(self.tiles):
                 for part in parts:
                     # put part with 2 different tiles in melds
@@ -191,8 +214,8 @@ class Player:
         return []
 
     def can_pon(self, tile, from_player):
-        convert_hands = Tile.convert_bonus(self.tiles)
-        convert_tile = Tile.convert_bonus([tile])[0]
+        convert_hands = Tile.convert_bonuses(self.tiles)
+        convert_tile = Tile.convert_bonus(tile)
         if (convert_hands.count(convert_tile) >= 2):
             if ((convert_tile == 4) and (34 in (self.tiles + [tile]))):
                 meld = [4, 4, 34]
@@ -207,8 +230,8 @@ class Player:
         return []
 
     def can_minkan(self, tile, from_player):
-        convert_hands = Tile.convert_bonus(self.tiles)
-        convert_tile = Tile.convert_bonus([tile])[0]
+        convert_hands = Tile.convert_bonuses(self.tiles)
+        convert_tile = Tile.convert_bonus(tile)
         if (convert_hands.count(convert_tile) == 3):
             if ((convert_tile == 4) and (34 in (self.tiles + [tile]))):
                 meld = [4, 4, 4, 34]
@@ -229,20 +252,53 @@ class Player:
         return [{'type': 'none', 'player': self.seat, 'from': from_player, 'tile': tile,
                 'meld': [], 'need_draw':False}]
 
-    def can_ankan(self, tile):
-        pass
-
-    # def get_waiting(self, is_draw):
     def can_win(self, tile, from_player):
-        if(tile in self.get_waiting(from_player == self.seat, self.gameboard.game-1 == self.seat)):
-            return True
-        return False
+        if (tile in self.get_waiting(False, self.gameboard.game-1 == self.seat)):
+            return [{'type':'win', 'player':self.seat, 'from':from_player, 'need_draw':False, 'tile':tile}]
+        return []
 
-    def can_riichi(slef):
+
+    def can_draw_action(self, tile):
+        draw_actions = self.can_zimo(tile)
+        if(draw_actions != []):
+            return draw_actions[0]
+        draw_actions += self.can_ankan(tile)
+        draw_actions += self.can_riichi(tile)
+        draw_actions += [{'type':'discard'}]
+        return random.choice(draw_actions)
+
+    def do_draw_action(self, action):
         pass
+
+    def can_ankan(self, tile):
+        convert_hands = Tile.convert_bonuses(self.tiles)
+        convert_tile = Tile.convert_bonus(tile)
+        if (convert_hands.count(convert_tile) == 3):
+            if ((convert_tile == 4) and (34 in (self.tiles + [tile]))):
+                meld = [4, 4, 4, 34]
+            elif ((convert_tile == 13) and (35 in (self.tiles + [tile]))):
+                meld = [13, 13, 13, 35]
+            elif ((convert_tile == 22) and (36 in (self.tiles + [tile]))):
+                meld = [22, 22, 22, 36]
+            else:
+                meld = [tile, tile, tile, tile]
+            return [{'type': 'ankan', 'player': self.seat, 'from': self.seat,
+                     'tile': tile, 'meld': meld, 'need_draw': True}]
+        return []
+
+    def can_riichi(self, tile):
+        hand = copy.deepcopy(self.tiles)
+        hand.append(tile)
+        check = self.to_discard_tile()
+        if(0 in list(check['shantin'].values())[1::]):
+            return [{'type':'riichi', 'player':self.seat, 'from':self.seat, 'tile':tile, 'need_draw':False}]
+        return []
+
+    def can_zimo(self, tile):
+        if (tile in self.get_waiting(True, self.gameboard.game-1 == self.seat)):
+            return [{'type':'zimo', 'player':self.seat, 'from':self.seat, 'tile':tile, 'need_draw':False}]
+        return []        
 
     @ property
     def is_tenpai(self):
         return False
-#[{'type': 'pon', 'player': 3, 'from': 1, 'tile': 17, 'meld': [17, 17, 17], 'need_draw': False}, {'type': 'minkan', 'player': 3, 'from': 1, 'tile': 17, 'meld': [17, 17, 17, 17], 'need_draw': False}, {'type': 'none', 'player': 3, 'from': 1, 'tile': 17, 'meld': [], 'need_draw': False}]
-# [{'type': 'pon', 'player': 1, 'from': 2, 'tile': 23, 'meld': [23, 23, 23], 'need_draw': False}, {'type': 'minkan', 'player': 1, 'from': 2, 'tile': 23, 'meld': [23, 23, 23, 23], 'need_draw': False}, {'type': 'none', 'player': 1, 'from': 2, 'tile': 23, 'meld': [], 'need_draw': False}]
