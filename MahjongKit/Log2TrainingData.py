@@ -1,4 +1,4 @@
-import GLC as mjk
+import MahjongKit as mjk
 import numpy as np
 from copy import deepcopy as dcp
 
@@ -80,7 +80,7 @@ class TrainingData:
         ), TrainingData.GameState(), TrainingData.GameState()]
 
     def process_player_states(self, player_state: mjk.PreProcessing.PlayerState, next_state):
-        if(player_state.a_action == None):
+        if (player_state.a_action == None):
             return
         if player_state.a_action['type'] == 'init_hand' and player_state.name not in self.player_names:
             self.player_names.append(player_state.name)
@@ -138,7 +138,7 @@ class TrainingData:
             self.States[player_index].expect_reach = [self.full_state]
             self.dump_reach_data(self.States[player_index])
         # check opponent's action
-        if(player_state.a_result == None or player_state.a_action == None):
+        if (player_state.a_result == None or player_state.a_action == None):
             return
         next_action = next_state.a_action['type']
 

@@ -261,7 +261,7 @@ class Tile:
 
     def convert_bonus(tile34):
         dic = {34: 4, 35: 13, 36: 22}
-        if(tile34 in dic.keys()):
+        if (tile34 in dic.keys()):
             return dic[tile34]
         return tile34
 
@@ -1445,14 +1445,14 @@ class WinWaitCal:
                     han_dict["han_sum"] + bonus_num, fu, is_dealer, is_zimo)
 
                 zimo_lose['is_zimo'] = is_zimo
-                if(is_zimo):
-                    if('n' in lose_desc):
+                if (is_zimo):
+                    if ('n' in lose_desc):
                         tmp_lose_desc = lose_desc.split('n')[1]
                     else:
                         tmp_lose_desc = lose_desc
                     tmp = re.findall('[0-9]+', tmp_lose_desc)
                     zimo_lose['other'] = int(tmp[0])
-                    zimo_lose['dealer'] = 0 if(is_dealer) else int(tmp[1])
+                    zimo_lose['dealer'] = 0 if (is_dealer) else int(tmp[1])
 
                 final_score = base_point + 1000 * reach_stick + \
                     benchan * (300 if base_point > 0 else 0)
@@ -1603,7 +1603,7 @@ class GameLogCrawler:
 
     level_dict = {'新人': 0, '１級': 1, '２級': 2, '３級': 3, '４級': 4, '５級': 5, '６級': 6, '７級': 7, '８級': 8, '９級': 9,
                   '初段': 10, '二段': 11, '三段': 12, '四段': 13, '五段': 14, '六段': 15, '七段': 16, '八段': 17, '九段': 18,
-                  '十段': 19, '天鳳位': 20}
+                  '十段': 19, '天鳳位': 20, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, 11: 11, 12: 12, 13: 13, 14: 14, 15: 15, 16: 16, 17: 17, 18: 18, 19: 19, 20: 20}
 
     def __init__(self):
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -1702,7 +1702,7 @@ class GameLogCrawler:
             try:
                 if not self._db_exists_name(name):
                     self.cs.execute(
-                        f'INSERT INTO player VALUES ("{name}", NULL, NULL, NULL)')
+                        f'INSERT INTO player VALUES ("{name}", NULL, NULL, NULL, NULL)')
                     print("    Player {} inserted into table player".format(name))
             except Exception as e:
                 print(e)
@@ -1842,6 +1842,8 @@ class GameLogCrawler:
                 yield {"ref": refid, "players": names}
 
     def _crawl_log_by_refid(self, refid):
+        if (refid[-1:] == '\n'):
+            refid = refid[:-1]
         url = "http://tenhou.net/5/mjlog2json.cgi?" + refid
         referer = "http://tenhou.net/5/?log=" + refid
         agent = "Mozilla/5.0 (Macintosh; Intel ...) Gecko/20100101 Firefox/58.0"
@@ -2047,7 +2049,10 @@ class PreProcessing:
                     t) for t in log[initial_hand_index] if t > 50]
                 states[player].init_state(hand34, bonus_tiles, player_winds[player],
                                           round_wind, revealed, names[player], dans[player], log[1][player])
-
+                states[player].s_red_fives = [Tile.his_to_34(
+                    t) for t in log[initial_hand_index] if t > 50]
+                states[player].a_action = {"type": "init_hand"}
+                res.append(deepcopy(states[player]))
             current_player = round_num % 4
             drop_to = [0, 0, 0, 0]
             draw_to = [0, 0, 0, 0]
