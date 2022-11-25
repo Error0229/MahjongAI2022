@@ -34,7 +34,7 @@ class TrainingData:
         @property
         def base_state(self):
             return [0 for _ in range(34)]
-
+        
         @property
         def full_state(self):
             return [1 for _ in range(34)]
@@ -159,13 +159,13 @@ class TrainingData:
                     self.States[opp_id].expect_minkan = [self.full_state]
                 self.dump_minkan_data(self.States[opp_id])
 
-    def can_chow(self, state):
+    def can_chow(self, state, drop):
         return False
 
-    def can_pon(self, state):
+    def can_pon(self, state, drop):
         return False
 
-    def can_kan(self, state):
+    def can_kan(self, state, drop):
         return False
 
     def set_hand(self, player_id, hand34):

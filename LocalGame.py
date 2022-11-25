@@ -98,6 +98,8 @@ class Round():
     # get discard tile and repeat
 
     def start(self):
+        for player in self.players:
+            player.is_riichi = False
         print(
             f'Round Start\nwind : {self.wind}, game : {self.game}, dora : {Tile.t34_to_grf(Tile.ind_to_bonus_dic[self.game_table.bonus_indicators[0]])}')
         print('>'*50)
@@ -106,6 +108,7 @@ class Round():
         is_over = False
         need_draw = True
         while (not self.game_table.no_tile_left() and not is_win and not is_over):
+            draw = None
             if need_draw:
                 draw = self.game_table.draw_tile()
                 action = self.players[turn].can_draw_action(draw)
@@ -118,12 +121,16 @@ class Round():
                     self.win_from_who = turn
                     return
                 elif(action['type'] == 'ankan'):
-                    pass
+                    self.players[turn].draw_tile(draw)
+                    continue
                 elif(action['type'] == 'riichi'):
-                    pass
-                self.players[turn].draw_tile(draw)
-
-            discard = self.players[turn].discard_tile()
+                    self.players[turn].do_draw_action(action)
+                    self.players[turn].draw_tile(draw)
+                    draw = action['to_discard']
+                else:
+                    self.players[turn].draw_tile(draw)
+                    
+            discard = self.players[turn].discard_tile(draw)
             self.game_table.discard_tile(turn, discard)
 
             actions = self.get_discard_action(discard, turn)
@@ -162,10 +169,7 @@ class Round():
     def process_discard_action(self, action):
         if(action['type'] in ['minkan', 'pon', 'chi']):
             self.players[action['player']].do_discard_action(action)
-            return (action['player'], action['need_draw'])
-        else:
-            turn = (action['player'] + 1) % self.player_count
-            return (turn, action['need_draw'])
+        return (action['player'], action['need_draw'])
 
     def process_win(self, actions):
         for action in actions:
