@@ -2,3 +2,5 @@ MahjongKit/__pycache__/
 __pycache__/
 LogIDCrawler/__pycache__/
 LogIDCrawler/*.json
+*.db
+TrainData/*

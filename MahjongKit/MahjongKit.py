@@ -795,16 +795,16 @@ class Partition:
         melds = []
         for parts in Partition.partition(tiles34):
             for part in parts:
-                # put part with 2 different tiles in melds                    
+                # put part with 2 different tiles in melds
                 if (len(part) == 2 and (part[0] != part[1]) and (part not in melds)):
                     melds.append(part)
             # complete every meld, and check if it is in the chow index
             melds = list(map(lambda x: sorted(x+[discard]), melds))
             for meld in melds:
-                if(meld in Tile.index_to_chow):
+                if (meld in Tile.index_to_chow):
                     return True
         return False
-            
+
     @staticmethod
     def can_pon(tiles34, discard):
         return (tiles34.count(discard) >= 2)
@@ -812,24 +812,26 @@ class Partition:
     @staticmethod
     def can_minkan(tiles34, discard):
         return (tiles34.count(discard) == 3)
-    
+
     @staticmethod
     def can_riichi(tiles34):
-        if(len(tiles34)!=14):
+        if (len(tiles34) != 14):
             return False
         hand = deepcopy(tiles34)
         is_check = []
-        for id,tile in enumerate(hand):
+        for id, tile in enumerate(hand):
             tile = Tile.convert_bonus(tile)
-            if(tile in is_check):
+            if (tile in is_check):
                 continue
             is_check += [tile]
-            new_hand = [Tile.convert_bonus(hand[i]) for i in range(len(hand)) if i!=id]
+            new_hand = [Tile.convert_bonus(hand[i])
+                        for i in range(len(hand)) if i != id]
             new_waiting = WinWaitCal.waiting_calculation(new_hand, [], [], [], True, 0, 0,
-                                                 True, 0, [], 0, 0, False)
-            if(list(new_waiting.keys())!=[]):
+                                                         True, 0, [], 0, 0, False)
+            if (list(new_waiting.keys()) != []):
                 return True
         return False
+
 
 class WinWaitCal:
 
@@ -2196,8 +2198,15 @@ class PreProcessing:
                             bonus_tiles.append(Tile.bns_ind_bd_dic.get(
                                 indicator, indicator + 1))
                         continue
-
-                drop = log[drop_index][drop_to[current_player]]
+                # something out of range but i dont know how to fix it :(
+                if drop_to[current_player] >= len(log[drop_index]):
+                    drop = 60
+                else:
+                    drop = log[drop_index][drop_to[current_player]]
+                # except:
+                #     print(log[drop_index])
+                #     print(drop_index, drop_to[current_player])
+                #     raise
                 is_drop_string = isinstance(drop, str)
 
                 if not is_drop_string:
