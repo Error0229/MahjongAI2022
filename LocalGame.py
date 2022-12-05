@@ -1,6 +1,6 @@
 from http.client import NOT_IMPLEMENTED
 import random
-from Player import Player
+from Player import Player, Model_port
 from MahjongKit.MahjongKit import *
 
 
@@ -21,6 +21,7 @@ class FullGame():
         self.game_table = GameTable()
         # tmp_players = players
         tmp_players = [Player(self.game_table) for i in range(player_count)]
+        tmp_players[0] = Model_port(self.game_table)
         for i in range(player_count):
             tmp_players[i].set_seat(i)
             tmp_players[i].set_wind(i)
@@ -132,7 +133,7 @@ class Round():
                     self.players[turn].draw_tile(draw)
                     
             discard = self.players[turn].discard_tile(draw)
-            self.game_table.discard_tile(turn, discard)
+            
 
             actions = self.get_discard_action(discard, turn)
             if(actions[0]['type'] == 'win'):
@@ -172,6 +173,8 @@ class Round():
         if(action['type'] in ['minkan', 'pon', 'chi']):
             self.players[action['player']].do_discard_action(action)
             self.game_table.open_melds[action['player']] += Tile.convert_bonuses(action['meld'])
+        else:
+            self.game_table.discard_tile(action['player'], action['tile'])
         return (action['player'], action['need_draw'])
 
     def process_win(self, actions):
@@ -266,6 +269,8 @@ class Round():
 
         print(f'Round End')
         print('<'*50)
+        # self.players[0].gameboard.display()
+        # print(*self.players[0].get_state(),sep='\n')
         return ending_status
 
 
@@ -350,12 +355,12 @@ class GameTable():
         print('----- GameTable info -----')
         print(f'wind:{self.wind}, game:{self.game}')
         print(f'reach_sticks:{self.reach_sticks}, honba_sticks:{self.honba_sticks}')
-        #print(f'bonus_indicators:{Tile.t34_to_grf(self.bonus_indicators)}')
+        print(f'bonus_indicators:{Tile.t34_to_grf(self.bonus_indicators)}')
         #print(f'hidden_bonus_indicators:{Tile.t34_to_grf(self.hidden_bonus_indicators)}')
         for i in range(4):
             print(f'player:{i}, point:{self.points[i]}, riichi:{self.riichi_status[i]}')
             print(f'discard_tiles:{" ".join(Tile.t34_to_grf(self.discard_tiles[i]))}')
-            print(f'open_meld:{self.open_melds[i]}')
+            print(f'open_meld:{" ".join(Tile.t34_to_grf(self.open_melds[i]))}')
         
 
 if __name__ == '__main__':
