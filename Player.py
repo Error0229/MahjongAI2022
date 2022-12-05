@@ -52,12 +52,14 @@ class Player:
             tile = self.to_discard_tile()['tile']
         self.tiles.remove(tile)
         self.discard_tiles.append(tile)
-        self.gameboard.discard_tile(self.seat, tile)
+        #self.gameboard.discard_tile(self.seat, tile)
         #self.display()
         return tile
 
     # return {'tile':int, 'shantin':dic}
     def to_discard_tile(self):
+
+        # atta
         is_check = [False for i in range(34)]
         res = None
         for id in range(len(self.tiles)):
@@ -93,7 +95,9 @@ class Player:
         str_meld   = f"Melds: {' '.join(Tile.t34_to_grf(self.open_melds))}"
         str_minkan = f"minkans: {' '.join(Tile.t34_to_grf(self.minkan))}"
         print(f"{str_tile:<31} , {str_meld:<20} , {str_minkan:<20}")
-
+        #print(f'scores:{self.gameboard.points}')
+        #print(f'riichi:{self.gameboard.riichi_status}')
+    
     def get_shantin(self, new_tiles=None, new_meld=[]):
         if (new_tiles == None):
             hand = self.tiles
@@ -341,3 +345,148 @@ class Player:
     @ property
     def is_tenpai(self):
         return False
+
+
+class model_port(Player):
+    
+    hand                     = None # 1*[4*34] dynamic 
+    all_reveal_tiles         = None # 1*[4*34] dynamic
+    self_discard_order       = None # 1*[20巡*34] dynamic
+    self_score               = None # 1*[1*34] static
+    self_reach_status        = None # 1*[1*34] dynamic
+    opponents_open_hend      = None # 3*[4*34] dynamic 
+    opponents_discards_order = None # 3*[20巡*34] dynamic 
+    opponents_scores         = None # 3*[1*34] static
+    opponents_reach_status   = None # 3*[1*34] dynamic
+    doras                    = None # 1*[4*34] dynamic 
+    round_wind               = None # 1*[1*34] static 
+    self_wind                = None # 1*[1*34] static
+    opponents_winds          = None # 3*[1*34] static
+    
+    def __init__(self):
+        self.__opponents_index = [(self.seat+i)%4 for i in range(1,4)]
+    
+    def set_static(self):
+        self.__set_static_self_score()
+        self.__set_static_opponents_scores()
+        self.__set_static_round_wind()
+        self.__set_static_self_wind()
+        self.__set_static_oppenents_wind()
+    
+    # self_score        # 1*[1*34] static
+    def __set_static_self_score(self):
+        raw_score = self.points if(self.points<50000) else 50000
+        res = self.get_34_zero()
+        for i in range(int(raw_score/50000*34)):
+            res[i] = 1
+        self.self_score = res
+
+    # opponents_scores  # 3*[1*34] static
+    def __set_static_opponents_scores(self):
+        res = self.get_34_zeros(3)
+        for i,player in enumerate(self.__opponents_index):
+            if(self.gameboard.points[player]<50000):
+                raw_score = self.gameboard.points[player]
+            else:
+                raw_score = 50000
+            for j in range(int(raw_score/50000*34)):
+                res[i][j] = 1
+        self.opponents_scores = res
+                
+    #  round_wind       # 1*[1*34] static
+    def __set_static_round_wind(self):
+        raw_wind = self.gameboard.wind
+        res = self.get_34_zero()
+        res[raw_wind+27] = 1
+        self.round_wind = res
+
+    # self_wind         # 1*[1*34] static
+    def __set_static_self_wind(self):
+        raw_wind = self.wind34
+        res = self.get_34_zero()
+        res[raw_wind] = 1
+        self.self_wind = res
+
+    # opponents_winds   # 3*[1*34] static
+    def __set_static_oppenents_wind(self):
+        res = self.get_34_zeros(3)
+        seat = self.seat
+        for i in range(3):
+            res[i][((seat+i+1)%4)+27] = 1
+        self.oppenents_wind = res
+
+
+
+    def update_dynamic(self):
+        self.__update_dynamic_hand()
+        self.__update_dynamic_all_reveal_tiles()
+        self.__update_dynamic_self_discard_order()
+        self.__update_dynamic_self_reach_status()
+        self.__update_dynamic_opponents_open_hend()
+        self.__update_dynamic_opponents_discards_order()
+        self.__update_dynamic_opponents_reach_status()
+        self.__update_dynamic_doras()
+    
+
+    # 1*[4*34] dynamic 
+    def __update_dynamic_hand(self):
+        res = self.get_34_zeros(4)
+        for tile in self.tiles:
+            the_tile = Tile.convert_bonus(tile)
+            i = 0
+            while(res[i][the_tile]==1):
+                i += 1
+            res[i][the_tile] = 1
+        self.hand = res
+
+    # 1*[4*34] dynamic
+    def __update_dynamic_all_reveal_tiles(self):
+        all_reveal = Tile.convert_bonuses(self.gameboard.bonus_indicators)
+        for i in range(4):
+            all_reveal += self.gameboard.discard_tiles[i]
+            all_reveal += self.gameboard.open_melds[i]
+        res = self.get_34_zeros(4)
+        for tile in all_reveal:
+            cnt = 0
+            while(res[cnt][tile] == 1):
+                cnt += 1
+            res[cnt][tile] = 1
+        self.all_reveal_tiles = res
+
+    # 1*[20巡*34] dynamic
+    def __update_dynamic_self_discard_order(self):
+        pass
+
+
+    # 1*[1*34] dynamic
+    def __update_dynamic_self_reach_status(self):
+        self.self_reach_status = res
+
+    # 3*[4*34] dynamic 
+    def __update_dynamic_opponents_open_hend(self):
+        self.opponents_open_hend = res
+
+    # 3*[20巡*34] dynamic 
+    def __update_dynamic_opponents_discards_order(self):
+        self.opponents_discards_order = res
+
+    # 3*[1*34] dynamic
+    def __update_dynamic_opponents_reach_status(self):
+        self.opponents_reach_status = res
+
+    # 1*[4*34] dynamic 
+    def __update_dynamic_doras(self):
+        self.doras = res
+
+    
+
+    def get_34_zeros(self, dim):
+        if(dim==1):
+            return self.get_34_zero()
+        return [self.get_34_zero() for _ in range(dim)]
+
+    def get_34_zero(self):
+        return [0 for _ in range(34)]
+    
+    def get_34_one(self):
+        return [1 for _ in range(34)]

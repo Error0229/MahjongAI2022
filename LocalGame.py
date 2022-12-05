@@ -32,9 +32,11 @@ class FullGame():
         while (not (self.wind == 1 and self.game == 5)):
             # self.round_number += 1
             self.game_table.set_game_table(
-                self.game, self.wind, self.honba_sticks, self.reach_sticks)
+                self.wind, self.game, self.honba_sticks, self.reach_sticks)
             self.round = Round(self.game_table, self.player_count, self.players,
                                self.wind, self.game, self.repeat_counter, self.reach_sticks, self.honba_sticks)
+            for player in self.players:
+                player.is_riichi = False
             self.round.start()
             end_status = self.round.round_end()
             self.wind = end_status['wind']
@@ -98,8 +100,6 @@ class Round():
     # get discard tile and repeat
 
     def start(self):
-        for player in self.players:
-            player.is_riichi = False
         print(
             f'Round Start\nwind : {self.wind}, game : {self.game}, dora : {Tile.t34_to_grf(Tile.ind_to_bonus_dic[self.game_table.bonus_indicators[0]])}')
         print('>'*50)
@@ -127,6 +127,7 @@ class Round():
                     self.players[turn].do_draw_action(action)
                     self.players[turn].draw_tile(draw)
                     draw = action['to_discard']
+                    self.game_table.riichi_status[turn] = True
                 else:
                     self.players[turn].draw_tile(draw)
                     
@@ -145,6 +146,7 @@ class Round():
             else:
                 # process discard action
                 turn, need_draw = self.process_discard_action(actions[0])
+
 
         self.is_win = 0
         self.is_over = 1
@@ -169,6 +171,7 @@ class Round():
     def process_discard_action(self, action):
         if(action['type'] in ['minkan', 'pon', 'chi']):
             self.players[action['player']].do_discard_action(action)
+            self.game_table.open_melds[action['player']] += Tile.convert_bonuses(action['meld'])
         return (action['player'], action['need_draw'])
 
     def process_win(self, actions):
@@ -224,6 +227,7 @@ class Round():
             print('liuju')
             for i in range(4):
                 self.players[i].display()
+            # self.game_table.display()
             # self.honba_sticks += 1
             self.repeat_counter += 1
             if not self.players[self.game-1].is_tenpai:
@@ -240,7 +244,7 @@ class Round():
         else:
             for i in range(4):
                 self.players[i].display()
-
+            # self.game_table.display()
             if self.who_win == self.game - 1:
                 self.repeat_counter += 1
                 self.honba_sticks += 1
@@ -259,7 +263,6 @@ class Round():
                                     1 - self.game + 4)
             ending_status = {"status": "Win", "is_zimo": self.is_zimo,
                              "win_player": self.who_win, "win_from_who": self.win_from_who, "wind":  self.wind, "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
-            # WIP probably merge into round class
 
         print(f'Round End')
         print('<'*50)
@@ -273,11 +276,13 @@ class GameTable():
     bonus_indicators = None
     hidden_bonus_indicators = None
     remaining_count = 0
-    revealed_tiles = None
     tiles = None
     reach_sticks = 0
     honba_sticks = 0
     points = [0, 0, 0, 0]
+    riichi_status = [False, False, False, False]
+    discard_tiles = None
+    open_melds = None
 
     def __init__(self, wind=-1, game=-1, reach_sticks=0, honba_sticks=0):
         self.wind = wind
@@ -296,6 +301,7 @@ class GameTable():
         self.reach_sticks = reach_sticks
         self.honba_sticks = honba_sticks
         self.points = [25000, 25000, 25000, 25000]
+        
 
     def set_game_table(self, wind=-1, game=-1, reach_sticks=0, honba_sticks=0):
         self.wind = wind
@@ -310,9 +316,11 @@ class GameTable():
         self.bonus_indicators = [self.tiles[9]]
         self.hidden_bonus_indicators = [self.tiles[8]]
         self.remaining_count = 136
-        self.revealed_tiles = [[] for i in range(4)]
         self.reach_sticks = reach_sticks
         self.honba_sticks = honba_sticks
+        self.riichi_status = [False, False, False, False]
+        self.discard_tiles = [[] for i in range(4)]
+        self.open_melds = [[] for i in range(4)]
 
     def draw_tile(self, num=1):
         '''
@@ -336,10 +344,26 @@ class GameTable():
     #     self.revealed_tiles[player].append(tile)
 
     def discard_tile(self, player, tile):
-        self.revealed_tiles[player].append(tile)
+        self.discard_tiles[player].append(Tile.convert_bonus(tile))
 
+    def display(self):
+        print('----- GameTable info -----')
+        print(f'wind:{self.wind}, game:{self.game}')
+        print(f'reach_sticks:{self.reach_sticks}, honba_sticks:{self.honba_sticks}')
+        #print(f'bonus_indicators:{Tile.t34_to_grf(self.bonus_indicators)}')
+        #print(f'hidden_bonus_indicators:{Tile.t34_to_grf(self.hidden_bonus_indicators)}')
+        for i in range(4):
+            print(f'player:{i}, point:{self.points[i]}, riichi:{self.riichi_status[i]}')
+            print(f'discard_tiles:{" ".join(Tile.t34_to_grf(self.discard_tiles[i]))}')
+            print(f'open_meld:{self.open_melds[i]}')
+        
 
 if __name__ == '__main__':
     game = FullGame(4)
     game.game_start()
     print("Game over.")
+
+'''
+self discard tiles in order                     : 1 * [20巡 * 34] V
+opponents discard tiles in order                : 3 * [20巡 * 34] V
+'''
