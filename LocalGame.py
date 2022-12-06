@@ -1,6 +1,7 @@
 from http.client import NOT_IMPLEMENTED
 import random
-from Player import Player, Model_port
+from Player import Player
+from ModelPort import ModelPort
 from MahjongKit.MahjongKit import *
 
 
@@ -21,7 +22,14 @@ class FullGame():
         self.game_table = GameTable()
         # tmp_players = players
         tmp_players = [Player(self.game_table) for i in range(player_count)]
-        tmp_players[0] = Model_port(self.game_table)
+        
+        '''
+        This will make player 0 use the model u put in.
+        But the model file cant push to github.
+        Comment this line if u want to run the normal thing.
+        '''
+        tmp_players[0] = ModelPort(self.game_table, 'discard_cnn_31.h5')
+        
         for i in range(player_count):
             tmp_players[i].set_seat(i)
             tmp_players[i].set_wind(i)
@@ -368,7 +376,3 @@ if __name__ == '__main__':
     game.game_start()
     print("Game over.")
 
-'''
-self discard tiles in order                     : 1 * [20巡 * 34] V
-opponents discard tiles in order                : 3 * [20巡 * 34] V
-'''

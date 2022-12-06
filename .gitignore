@@ -3,3 +3,4 @@ __pycache__/
 LogIDCrawler/__pycache__/
 LogIDCrawler/*.json
 *.db
+*.h5
