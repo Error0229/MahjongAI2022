@@ -4,12 +4,13 @@ from MahjongKit.MahjongKit import Tile, Meld, Partition, WinWaitCal
 import random
 import copy
 
+
 class Player:
     wind = 0
     wind34 = 0
     selfwind = 0
+    roundwind34 = 0
     seat = 0
-    seat34 = 0
     tiles = []
     discard_tiles = []
     points = 0
@@ -31,18 +32,21 @@ class Player:
     def init_tiles(self, tiles):
         self.tiles = tiles
 
+    def set_round_wind(self, wind):
+        self.roundwind34 = wind+27
+
     def set_seat(self, seat):
         self.seat = seat
-        self.seat34 = seat + 27
 
     def set_wind(self, wind):
         self.wind = wind
         self.wind34 = wind + 27
 
-    def init_round(self, tiles, wind):
+    def init_round(self, tiles, wind, roundwind):
         self.tiles = tiles
         self.wind = wind
         self.wind34 = wind + 27
+        self.roundwind34 = roundwind + 27
 
     def discard_tile(self, last=None):
         # tile = self.tiles[random.randint(0, len(self.tiles)-1)]
@@ -53,7 +57,7 @@ class Player:
         self.tiles.remove(tile)
         self.discard_tiles.append(tile)
         #self.gameboard.discard_tile(self.seat, tile)
-        #self.display()
+        # self.display()
         return tile
 
     # return {'tile':int, 'shantin':dic}
@@ -83,19 +87,19 @@ class Player:
     def draw_tile(self, tile):
         self.tiles.append(tile)
         self.tiles.sort()
-        #print(f'{self.seat}==sort===')
+        # print(f'{self.seat}==sort===')
 
     def display(self):
         print(f'player {self.seat}, Wind: {Tile.t34_to_grf(self.wind34)}', end=' , ')
         print(f'score: {self.points}', end=' , ')
         print(f'riichi: {self.is_riichi}', end=' , ')
-        str_tile   = f"Tile: {' '.join(Tile.t34_to_grf(self.tiles))}"
-        str_meld   = f"Melds: {' '.join(Tile.t34_to_grf(self.open_melds))}"
+        str_tile = f"Tile: {' '.join(Tile.t34_to_grf(self.tiles))}"
+        str_meld = f"Melds: {' '.join(Tile.t34_to_grf(self.open_melds))}"
         str_minkan = f"minkans: {' '.join(Tile.t34_to_grf(self.minkan))}"
         print(f"{str_tile:<31} , {str_meld:<20} , {str_minkan:<20}")
-        #print(f'scores:{self.gameboard.points}')
-        #print(f'riichi:{self.gameboard.riichi_status}')
-    
+        # print(f'scores:{self.gameboard.points}')
+        # print(f'riichi:{self.gameboard.riichi_status}')
+
     def get_shantin(self, new_tiles=None, new_meld=[]):
         if (new_tiles == None):
             hand = self.tiles
@@ -105,7 +109,7 @@ class Player:
         if (new_meld != []):
             melds.append(new_meld)
         bonus_chr = list(
-            filter(lambda f: f in [self.wind+27, self.seat+27, 31, 32, 33], hand))
+            filter(lambda f: f in [self.wind34, self.roundwind34, 31, 32, 33], hand))
         return Partition.shantin_multiple_forms(hand, melds, bonus_chr)
 
     # only return list of tiles waiting
@@ -125,7 +129,7 @@ class Player:
         for i in self.gameboard.bonus_indicators:
             bonus_tiles.append(Tile.ind_to_bonus_dic[i])
         bonus_num += len([i for i in hand if i in bonus_tiles])
-        waiting = WinWaitCal.waiting_calculation(hand, self.open_melds, self.minkan, self.ankan, is_draw, self.seat34, self.wind34,
+        waiting = WinWaitCal.waiting_calculation(hand, self.open_melds, self.minkan, self.ankan, is_draw, self.wind34, self.roundwind34,
                                                  self.is_riichi, bonus_num, bonus_tiles, self.gameboard.honba_sticks, self.gameboard.reach_sticks, is_dealer)
         return list(waiting.keys())
         # WinWaitCal.waiting_calculation(hand, melds, minkan, ankan, is_zimo, self.seat, self.wind, is_riichi, bonus_num, bonus_tiles, benchan, reach_stick, is_dealer)
@@ -150,7 +154,7 @@ class Player:
             for _tile in _meld:
                 if (_tile in bonus_tiles):
                     bonus_num += 1
-        win = WinWaitCal.score_calculation(hand, tile, self.open_melds, self.minkan, self.ankan, is_zimo, self.seat34, self.wind34,
+        win = WinWaitCal.score_calculation(hand, tile, self.open_melds, self.minkan, self.ankan, is_zimo, self.wind34, self.roundwind34,
                                            self.is_riichi, bonus_num, bonus_tiles, self.gameboard.honba_sticks, self.gameboard.reach_sticks, is_dealer)
         return win
 
@@ -169,11 +173,12 @@ class Player:
     draw_action:
         zimo, ankan, riichi, none
     '''
+
     def can_discard_action(self, tile, from_player):
         if(self.seat == from_player):
             return {'type': 'none', 'player': self.seat, 'from': from_player, 'tile': tile,
-                'meld': [], 'need_draw':False}
-        
+                    'meld': [], 'need_draw': False}
+
         # if(True):
         #     return self.can_draw(tile, from_player)[0]
 
@@ -268,9 +273,8 @@ class Player:
 
     def can_win(self, tile, from_player):
         if (tile in self.get_waiting(False, self.gameboard.game-1 == self.seat)):
-            return [{'type':'win', 'player':self.seat, 'from':from_player, 'need_draw':False, 'tile':tile}]
+            return [{'type': 'win', 'player': self.seat, 'from': from_player, 'need_draw': False, 'tile': tile}]
         return []
-
 
     def can_draw_action(self, tile):
         draw_actions = self.can_zimo(tile)
@@ -279,19 +283,18 @@ class Player:
         draw_actions += self.can_ankan(tile)
         if(not self.is_riichi):
             draw_actions += self.can_riichi(tile)
-        draw_actions += [{'type':'discard'}]
+        draw_actions += [{'type': 'discard'}]
         return draw_actions[0]
-        #return random.choice(draw_actions)
+        # return random.choice(draw_actions)
 
     def do_draw_action(self, draw_action):
-        if(draw_action['type']=='ankan'):
+        if(draw_action['type'] == 'ankan'):
             self.open_melds += draw_action['meld']
             self.tiles.append(draw_action['tile'])
             for tile in draw_action['meld']:
                 self.tiles.remove(tile)
-        elif(draw_action['type']=='riichi'):
+        elif(draw_action['type'] == 'riichi'):
             self.is_riichi = True
-        
 
     def can_ankan(self, tile):
         convert_hands = Tile.convert_bonuses(self.tiles)
@@ -314,32 +317,32 @@ class Player:
             return []
         hand = copy.deepcopy(self.tiles)
         hand.append(tile)
-        
+
         is_check = []
         waiting = []
         to_discard = None
-        for id,tile in enumerate(hand):
+        for id, tile in enumerate(hand):
             tile = Tile.convert_bonus(tile)
             if(tile in is_check):
                 continue
             is_check += [tile]
-            new_hand = [Tile.convert_bonus(hand[i]) for i in range(len(hand)) if i!=id]
-            new_waiting = WinWaitCal.waiting_calculation(new_hand, [], [], self.ankan, True, self.seat34, self.wind34,
-                                                 True, 0, [], 0, 0, False)
+            new_hand = [Tile.convert_bonus(hand[i]) for i in range(len(hand)) if i != id]
+            new_waiting = WinWaitCal.waiting_calculation(new_hand, [], [], self.ankan, True, self.wind34, self.roundwind34,
+                                                         True, 0, [], 0, 0, False)
             new_waiting = list(new_waiting)
             if(len(waiting) < len(new_waiting)):
                 waiting = new_waiting
                 to_discard = tile
         if(waiting != []):
             #print(f'waiting:{Tile.t34_to_grf(waiting)}, discard:{Tile.t34_to_grf(to_discard)}')
-            return [{'type':'riichi', 'player':self.seat, 'from':self.seat, 'tile':tile, 'need_draw':False, 'to_discard':to_discard}]
+            return [{'type': 'riichi', 'player': self.seat, 'from': self.seat, 'tile': tile, 'need_draw': False, 'to_discard': to_discard}]
         return []
 
     def can_zimo(self, tile):
         if (tile in self.get_waiting(True, self.gameboard.game-1 == self.seat)):
-            return [{'type':'zimo', 'player':self.seat, 'from':self.seat, 'tile':tile, 'need_draw':False}]
-        return []        
+            return [{'type': 'zimo', 'player': self.seat, 'from': self.seat, 'tile': tile, 'need_draw': False}]
+        return []
 
     @ property
     def is_tenpai(self):
-        return False
+        return len(self.get_waiting(False, self.gameboard.game-1 == self.seat))
