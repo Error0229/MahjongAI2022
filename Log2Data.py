@@ -88,7 +88,7 @@ class TrainingData:
         self.States = [TrainingData.GameState(), TrainingData.GameState(
         ), TrainingData.GameState(), TrainingData.GameState()]
 
-    def process_player_states(self, player_state: mjk.PreProcessing.PlayerState, next_state):
+    def process_player_states(self, player_state: mjk.PreProcessing.PlayerState, next_state: mjk.PreProcessing.PlayerState):
         if (player_state.a_action == None):
             return
         if player_state.a_action['type'] == 'init_hand':
@@ -114,9 +114,9 @@ class TrainingData:
             return
         player_index = self.player_names.index(player_state.name)
         self.set_hand(player_index, player_state.s_hand34)
-        self.set_melds_to_hand(player_index, player_state.s_meld34)
-        self.set_minkan_to_hand(player_index, player_state.s_minkan)
-        self.set_ankan_to_hand(player_index, player_state.s_ankan)
+        # self.set_melds_to_hand(player_index, player_state.s_meld34)
+        # self.set_minkan_to_hand(player_index, player_state.s_minkan)
+        # self.set_ankan_to_hand(player_index, player_state.s_ankan)
         self.set_reveal_tiles(player_index, player_state.s_revealed)
         self.set_discard_tiles(player_index, player_state.s_discard34)
         self.set_reach_status(player_index, player_state.s_reach)
@@ -125,6 +125,7 @@ class TrainingData:
         self.States[player_index].score = player_state.score
         self.States[player_index].hand34 = player_state.s_hand34
         self.States[player_index].meld34 = player_state.s_meld34
+        self.States[player_index].discard34 = player_state.s_discard34
         # opponent parts need to know the wind relation
         for i in range(3):
             next_p = player_state.s_player_wind + i + 1
@@ -137,23 +138,23 @@ class TrainingData:
                 self.set_opp_reach_status(player_index, i, opp_id)
                 self.set_opp_score(player_index, i, opp_id)
         Action = player_state.a_action
+        is_tenhou = self.dan[player_state.name] == '天鳳' or self.dan[player_state.name] == '十段'
 
         if Action == None:
             return
         self.States[player_index].action = Action['type']
-        if (Action['type'] == 'drop' and self.dan[player_state.name] == '天鳳'):
+        if (Action['type'] == 'drop' and is_tenhou):
             self.States[player_index].expect_discard = [self.base_state]
             self.set_tile(
                 self.States[player_index].expect_discard, Action['tile'])
             self.dump_discard_data(self.States[player_index])
-        if (Action['type'] == 'reach_drop' and self.dan[player_state.name] == '天鳳'):
+        if (Action['type'] == 'reach_drop' and is_tenhou):
             self.States[player_index].expect_reach = [self.full_state]
             self.dump_reach_data(self.States[player_index])
-        if (self.can_reach(self.States[player_index])):
+        if (player_state.s_reach == False and self.can_reach(self.States[player_index]) and is_tenhou):
             self.dump_reach_data(self.States[player_index])
         # check opponent's action
-        is_tenhou = self.dan[player_state.name] == '天鳳'
-        if (not (player_state.a_result == None) ^ (player_state.a_action == None)):
+        if (not ((player_state.a_result == None) ^ (player_state.a_action == None))):
             return
         if (not (Action['type'] == 'reach_drop' or Action['type'] == 'drop')):
             return
@@ -171,35 +172,35 @@ class TrainingData:
                 self.States[player_index].expect_chow = [self.base_state]
                 # print(
                 #     f'chow : from player {player_index}, opp player : {opp_id}, {self.States[opp_id].hand34}, {tile}')
-                if next_action == 'chow':
+                if next_action['type'] == 'chow':
                     self.States[opp_id].expect_chow = [self.full_state]
                 self.dump_chow_data(self.States[opp_id])
             elif is_tenhou and self.can_pon(self.States[opp_id], tile):
                 self.States[player_index].expect_pon = [self.base_state]
                 # print(
                 #     f'pon : from player {player_index}, opp player : {opp_id}, {self.States[opp_id].hand34}, {tile}')
-                if next_action == 'pon' and opp_id == self.wind_to_id[next_state.s_player_wind]:
+                if next_action['type'] == 'pon' and opp_id == self.wind_to_id[next_state.s_player_wind]:
                     self.States[opp_id].expect_pon = [self.full_state]
                 self.dump_pon_data(self.States[opp_id])
             elif is_tenhou and self.can_kan(self.States[opp_id], tile):
                 self.States[player_index].expect_minkan = [self.base_state]
-                if next_action == 'minkan' and opp_id == self.wind_to_id[next_state.s_player_wind]:
+                if next_action['type'] == 'minkan' and opp_id == self.wind_to_id[next_state.s_player_wind]:
                     self.States[opp_id].expect_minkan = [self.full_state]
                 self.dump_minkan_data(self.States[opp_id])
 
-    def can_chow(self, state, drop):
+    def can_chow(self, state: GameState, drop):
         tile34 = state.hand34
         return mjk.Partition.can_chi(tile34, drop)
 
-    def can_pon(self, state, drop):
+    def can_pon(self, state: GameState, drop):
         tile34 = state.hand34
         return mjk.Partition.can_pon(tile34, drop)
 
-    def can_kan(self, state, drop):
+    def can_kan(self, state: GameState, drop):
         tile34 = state.hand34
         return mjk.Partition.can_minkan(tile34, drop)
 
-    def can_reach(self, state):
+    def can_reach(self, state: GameState):
         tile34 = state.hand34
         return mjk.Partition.can_riichi(tile34)
 
@@ -234,7 +235,7 @@ class TrainingData:
     def set_discard_tiles(self, player_id, discard_34):
         self.States[player_id].self_discard_tiles = [
             self.base_state for _ in range(20)]
-        for turn in range(len(discard_34)):
+        for turn in range(min(len(discard_34), 20)):
             self.set_single_tile(
                 self.States[player_id].self_discard_tiles[turn], discard_34[turn])
 
@@ -261,8 +262,8 @@ class TrainingData:
     def set_opp_discards(self, player_id, seat, opp_id):
         self.States[player_id].opponents_discard_tiles[seat] = [
             self.base_state for _ in range(20)]
-        for turn in range(len(self.States[opp_id].discard34)):
-            self.set_tile(
+        for turn in range(min(20, len(self.States[opp_id].discard34))):
+            self.set_single_tile(
                 self.States[player_id].opponents_discard_tiles[seat][turn], self.States[opp_id].discard34[turn])
 
     def set_opp_wind(self, player_id, seat, opp_id):
@@ -348,10 +349,25 @@ class TrainingData:
     def append_state(self, state):
         self.States.append(state)
 
+    def form34_to_bin(self, data):
+        res = []
+        for test_c in data:
+            one_test = []
+            for lst34 in test_c:
+                k = 0
+                for i in range(34):
+                    k <<= 1
+                    k += lst34[i]
+                one_test.append(k)
+            res.append(one_test)
+        return res
+
     def dump_all(self):
         datas_name = ['discard', 'chow', 'pon', 'minkan', 'reach']
         datas = [self.discard_data, self.chow_data,
                  self.pon_data, self.minkan_data, self.reach_data]
+        for i in range(len(datas)):
+            datas[i] = self.form34_to_bin(datas[i])
         for i in range(5):
             df = pd.DataFrame(datas[i])
             df.to_csv(f'TrainingData/{datas_name[i]}_data.csv', mode='a+',
@@ -360,14 +376,71 @@ class TrainingData:
 
 def generate_training_data(num, level):
     glc = mjk.GameLogCrawler()
-    # glc.db_show_tables()
+    glc.db_show_tables()
     gene = glc.db_get_logs_where_players_lv_gr(level)
     for _ in range(num):
-        print(f'Generating level > {level} training data: {_+1}/{num}')
         td = TrainingData()
         log = next(gene)
+        print(f'Generating level > {level} training data: {_+1}/{num}')
+        result = mjk.PreProcessing.process_one_log(log)
+        if result == None:
+            continue
+        for k, v in result.items():
+            present_state = v[0]
+            for state in v[1:]:
+                td.process_player_states(present_state, state)
+                present_state = state
+        td.dump_all()
+
+
+def check_log_format(log):
+    res = mjk.PreProcessing.process_one_log(log)
+    if res == None:
+        return
+    for k, v in res.items():
+        print("Round {}".format(k))
+        for state in v:
+            print(state)
+
+
+def check_nth_log(num, level):
+    glc = mjk.GameLogCrawler()
+    glc.db_show_tables()
+    gene = glc.db_get_logs_where_players_lv_gr(level)
+    log = None
+    for _ in range(num):
+        log = next(gene)
+    mjk.GameLogCrawler.prt_log_format(log)
+    # check_log_format(log)
+    result = mjk.PreProcessing.process_one_log(log)
+    if result == None:
+        print('This log is bugged :(')
+        return
+    td = TrainingData()
+    for k, v in result.items():
+        present_state = v[0]
+        for state in v[1:]:
+            td.process_player_states(present_state, state)
+            present_state = state
+    td.dump_all()
+
+
+def generate_trainging_data_after_nth(num, level, count):
+    glc = mjk.GameLogCrawler()
+    glc.db_show_tables()
+    gene = glc.db_get_logs_where_players_lv_gr(level)
+    for _ in range(count):
+        log = next(gene)
+    for _ in range(num):
+        log = next(gene)
+        td = TrainingData()
+        print(
+            f'Generating level >= {level+1} training data: {_ + 1 + count}/{num + count}')
+        # check_log_format(log)
         # mjk.GameLogCrawler.prt_log_format(log)
         result = mjk.PreProcessing.process_one_log(log)
+        if result == None:
+            continue
         for k, v in result.items():
             present_state = v[0]
             for state in v[1:]:
@@ -377,6 +450,18 @@ def generate_training_data(num, level):
 
 
 if __name__ == '__main__':
-    N = int(input('How much logs are using for training data? '))
-    L = int(input('What level of players are using for training data? '))
-    generate_training_data(N, L)
+    mode = int(input(
+        'What mode do you want to run? (1: generate data, 2: check n-th log, 3: generate after n-th log): '))
+    if mode == 1:
+        N = int(input('How much logs are using for training data? '))
+        L = int(input('What is the minimum level of players? '))
+        generate_training_data(N, L - 1)
+    elif mode == 2:
+        N = int(input('Which log do you want to check? '))
+        L = int(input('What is the minimum level of players? '))
+        check_nth_log(N, L - 1)
+    elif mode == 3:
+        C = int(input('How much logs already generated? '))
+        N = int(input('How much logs are using for training data? '))
+        L = int(input('What is the minimum level of players? '))
+        generate_trainging_data_after_nth(N, L - 1, C)

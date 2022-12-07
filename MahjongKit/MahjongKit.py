@@ -1098,6 +1098,8 @@ class WinWaitCal:
 
         def check_dori():
             for meld in all_melds:
+                # print(
+                #     f'meld: {meld}, player_wind: {player_wind}, round_wind: {round_wind}')
                 if len(meld) > 2 and meld[0] == meld[1]:
                     if meld[0] in Tile.THREES:
                         add_han(1, "役牌(1Han)")
@@ -2061,6 +2063,7 @@ class PreProcessing:
             for p in partitions:
                 han = WinWaitCal.han_calculation(p, final_tile, self.s_meld34, self.s_minkan, self.s_ankan,
                                                  is_zimo, self.s_player_wind, self.s_round_wind, self.s_reach)
+                # print(f'Partition: {p}, Han: {han}')
                 if han["han_sum"] > 0 or han["yk_sum"] > 0:
                     return True
             return False
@@ -2079,7 +2082,7 @@ class PreProcessing:
                 first_indicator_34, first_indicator_34 + 1)
             bonus_tiles.append(first_bonus)
             round_wind = Tile.WINDS[round_num // 4]
-            player_winds = Tile.WINDS[round_num:] + Tile.WINDS[0:round_num]
+            player_winds = Tile.WINDS[4-round_num:] + Tile.WINDS[0:4-round_num]
             revealed = [0] * 34
 
             states = [PreProcessing.PlayerState(), PreProcessing.PlayerState(),
@@ -2099,6 +2102,18 @@ class PreProcessing:
             current_player = round_num % 4
             drop_to = [0, 0, 0, 0]
             draw_to = [0, 0, 0, 0]
+            haitei_or_houtei = False
+            rinshan_or_chankan = False
+            # print(log[16])
+            for item in log[16]:
+                # print(item)
+                # print(f'type : {type(item)}')
+                if (isinstance(item, type(list()))):
+                    # print('is list')
+                    if ("海底摸月(1飜)" in item or "河底撈魚(1飜)" in item):
+                        haitei_or_houtei = True
+                    if ("嶺上開花(1飜)" in item or "槍槓(1飜)" in item):
+                        rinshan_or_chankan = True
 
             def pack_opps(current_player):
                 opps = []
@@ -2110,15 +2125,27 @@ class PreProcessing:
                 return opps
 
             while current_player != -1:
+                # print(f'current player: {current_player}')
                 base_index = (current_player + 1) * 3
                 draw_index, drop_index = base_index + 2, base_index + 3
                 # handle drawn tile
+
                 draw = log[draw_index][draw_to[current_player]]
+                # print('draw_to : ', draw_to, draw)
+                is_last_tile = False
+                for i in range(4):
+                    if drop_to[i] >= len(log[(i + 1) * 3 + 3]):
+                        is_last_tile = True
+                        break
                 is_draw_string = isinstance(draw, str)
 
                 if not is_draw_string:
-                    if states[current_player].is_winning(Tile.his_to_34(draw), True):
+                    # print(
+                    #     f'is last tile {is_last_tile}, haitei {haitei_or_houtei}')
+                    if states[current_player].is_winning(Tile.his_to_34(draw), True) or (is_last_tile and haitei_or_houtei) or rinshan_or_chankan:
+                        # print('wining')
                         if (draw_to[current_player] + 1) == len(log[draw_index]):
+                            # print('zimo')
                             states[current_player].a_last_action = {
                                 "type": "draw", "tile": Tile.his_to_34(draw)}
                             final_score = round_scores[current_player:] + \
@@ -2198,15 +2225,11 @@ class PreProcessing:
                             bonus_tiles.append(Tile.bns_ind_bd_dic.get(
                                 indicator, indicator + 1))
                         continue
-                # something out of range but i dont know how to fix it :(
-                if drop_to[current_player] >= len(log[drop_index]):
-                    drop = 60
-                else:
+
                     drop = log[drop_index][drop_to[current_player]]
-                # except:
-                #     print(log[drop_index])
-                #     print(drop_index, drop_to[current_player])
-                #     raise
+                # print('drop_to : ', drop_to, drop)
+
+                # print('=' * 15)
                 is_drop_string = isinstance(drop, str)
 
                 if not is_drop_string:
@@ -2214,7 +2237,8 @@ class PreProcessing:
                     drop34 = Tile.his_to_34(drop)
                     for i in range(1, 4):
                         ck_player = (current_player + i) % 4
-                        if states[ck_player].is_winning(drop34, False):
+                        if states[ck_player].is_winning(drop34, False) or (is_last_tile and haitei_or_houtei):
+                            # print('wining')
                             if (drop_to[current_player] + 1) == len(log[drop_index]):
                                 states[current_player].a_last_action = None
                                 states[current_player].a_action = {
@@ -2224,8 +2248,6 @@ class PreProcessing:
                                 states[current_player].s_opponents = pack_opps(
                                     current_player)
                                 res.append(deepcopy(states[current_player]))
-                                break
-
                 was_reach_drop = False
                 if is_drop_string:
                     if 'a' in drop:
@@ -2257,6 +2279,7 @@ class PreProcessing:
                         which = drop.index('k') // 2
                         old_pon, new_drawn = [], None
                         drop = drop.replace('k', '')
+                        got_chakan = False
                         kans = [Tile.his_to_34(
                             int(drop[i * 2:(i + 1) * 2])) for i in range(4)]
                         for i in range(1, 4):
@@ -2270,8 +2293,11 @@ class PreProcessing:
                                     "type": "lose", "tile": kans[0], "score": round_scores[current_player], "who_wins": ck_player}
                                 states[current_player].s_opponents = pack_opps(
                                     current_player)
+                                got_chakan = True
                                 res.append(deepcopy(states[current_player]))
                                 break
+                        if got_chakan:
+                            break
                         states[current_player].a_last_action = {
                             "type": "draw", "tile": kans[0]}
                         states[current_player].a_action = {
@@ -2302,7 +2328,7 @@ class PreProcessing:
                         drop34 = Tile.his_to_34(drop)
                         for i in range(1, 4):
                             ck_player = (current_player + i) % 4
-                            if states[ck_player].is_winning(drop34, False):
+                            if states[ck_player].is_winning(drop34, False) or (is_last_tile and haitei_or_houtei):
                                 if (drop_to[current_player] + 1) == len(log[drop_index]):
                                     states[current_player].a_last_action = states[current_player].a_action
                                     states[current_player].a_action = {
@@ -2314,6 +2340,7 @@ class PreProcessing:
                                     res.append(
                                         deepcopy(states[current_player]))
                                     break
+
                         states[current_player].a_last_action = states[current_player].a_action
                         states[current_player].a_action = {
                             "type": "reach_drop", "tile": drop34}
@@ -2353,48 +2380,62 @@ class PreProcessing:
                             current_player)
                         res.append(deepcopy(states[current_player]))
                     return res
-
+                pon_exist = False
+                chi_exist = False
+                kan_exist = False
+                next_player = -1
                 for i in range(1, 4):
                     check_player = (current_player + i) % 4
                     draw_index = (check_player + 1) * 3 + 2
                     if draw_to[check_player] >= len(log[draw_index]):
                         continue
                     drew = log[draw_index][draw_to[check_player]]
-                    if isinstance(drew, str) and 'c' in drew and str(drop) == drew[1:3]:
+                    # print(drew)
+                    if pon_exist == False and isinstance(drew, str) and 'c' in drew and str(drop) == drew[1:3]:
                         if check_player == (current_player + 1) % 4:
-                            current_player = check_player
-                            break
+                            next_player = check_player
+                            chi_exist = True
                     if isinstance(drew, str) and 'p' in drew:
                         which = drew.index('p') // 2
                         drew = drew.replace('p', '')
                         pons = [int(drew[i * 2:(i + 1) * 2])
                                 for i in range(0, 3)]
                         if drop in pons and which == (i - 1):
-                            current_player = check_player
-                            break
+                            next_player = check_player
+                            pon_exist = True
                     if isinstance(drew, str) and 'm' in drew:
                         drew = drew.replace('m', '')
                         kans = [int(drew[i * 2:(i + 1) * 2])
                                 for i in range(0, 4)]
                         if drop in kans:
-                            current_player = check_player
-                            break
+                            kan_exist = True
+                            next_player = check_player
+
                 else:
-                    current_player = (current_player + 1) % 4
+                    # print(
+                    # f'pon_exist:{pon_exist},chi_exist:{chi_exist},kan_exist:{kan_exist}')
+                    if (not (chi_exist or pon_exist or kan_exist)):
+                        current_player = (current_player + 1) % 4
+                    else:
+                        current_player = next_player
 
             return res
 
     @staticmethod
     def process_one_log(log):
+        bug_log_ids = ['2022022818gm-00a9-0000-fe42eb89']
         """
         Pre-process one log file
         :param log: game log as a dict
         :return: res dict, key=round number, value=sequences of state action pairs
         """
         names, dans = log['name'], log['dan']
+        if (log['ref'] in bug_log_ids):
+            return None
         res = {}
         rounds = log['log']
         for i in range(len(rounds)):
+            # print(f'processing round {i}')
             res[i+1] = PreProcessing.process_one_round(rounds[i], names, dans)
         return res
 
