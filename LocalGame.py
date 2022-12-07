@@ -22,17 +22,18 @@ class FullGame():
         self.game_table = GameTable()
         # tmp_players = players
         tmp_players = [Player(self.game_table) for i in range(player_count)]
-        
+
         '''
         This will make player 0 use the model u put in.
         But the model file cant push to github.
         Comment this line if u want to run the normal thing.
         '''
-        tmp_players[0] = ModelPort(self.game_table, 'discard_cnn_31.h5')
-        
+        tmp_players[0] = ModelPort(self.game_table, 'discard_cnn_3110w_data_6conv31.h5')
+
         for i in range(player_count):
             tmp_players[i].set_seat(i)
             tmp_players[i].set_wind(i)
+            tmp_players[i].set_round_wind(i)
         # random.shuffle(tmp_players)
         self.players = tmp_players
         # self.round = Round(player_count, tmp_players, 0, 0, 0, 0,0,0)
@@ -139,9 +140,8 @@ class Round():
                     self.game_table.riichi_status[turn] = True
                 else:
                     self.players[turn].draw_tile(draw)
-                    
+
             discard = self.players[turn].discard_tile(draw)
-            
 
             actions = self.get_discard_action(discard, turn)
             if(actions[0]['type'] == 'win'):
@@ -155,7 +155,7 @@ class Round():
             else:
                 # process discard action
                 turn, need_draw = self.process_discard_action(actions[0])
-
+            # self.game_table.display()
 
         self.is_win = 0
         self.is_over = 1
@@ -181,8 +181,9 @@ class Round():
         if(action['type'] in ['minkan', 'pon', 'chi']):
             self.players[action['player']].do_discard_action(action)
             self.game_table.open_melds[action['player']] += Tile.convert_bonuses(action['meld'])
+            self.game_table.discard_tile(action['from'], action['tile'])
         else:
-            self.game_table.discard_tile(action['player'], action['tile'])
+            self.game_table.discard_tile(action['from'], action['tile'])
         return (action['player'], action['need_draw'])
 
     def process_win(self, actions):
@@ -250,8 +251,9 @@ class Round():
                     player.set_wind(player.seat + 1 - self.game if player.seat +
                                     1 - self.game >= 0 else player.seat +
                                     1 - self.game + 4)
-                ending_status = {"status": "exhaustive", "wind":  self.wind,
-                                 "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
+                    player.set_round_wind(self.wind)
+            ending_status = {"status": "exhaustive", "wind":  self.wind,
+                             "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
         else:
             for i in range(4):
                 self.players[i].display()
@@ -272,6 +274,7 @@ class Round():
                     player.set_wind(player.seat + 1 - self.game if player.seat +
                                     1 - self.game >= 0 else player.seat +
                                     1 - self.game + 4)
+                    player.set_round_wind(self.wind)
             ending_status = {"status": "Win", "is_zimo": self.is_zimo,
                              "win_player": self.who_win, "win_from_who": self.win_from_who, "wind":  self.wind, "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
 
@@ -314,7 +317,6 @@ class GameTable():
         self.reach_sticks = reach_sticks
         self.honba_sticks = honba_sticks
         self.points = [25000, 25000, 25000, 25000]
-        
 
     def set_game_table(self, wind=-1, game=-1, reach_sticks=0, honba_sticks=0):
         self.wind = wind
@@ -364,15 +366,14 @@ class GameTable():
         print(f'wind:{self.wind}, game:{self.game}')
         print(f'reach_sticks:{self.reach_sticks}, honba_sticks:{self.honba_sticks}')
         print(f'bonus_indicators:{Tile.t34_to_grf(self.bonus_indicators)}')
-        #print(f'hidden_bonus_indicators:{Tile.t34_to_grf(self.hidden_bonus_indicators)}')
+        # print(f'hidden_bonus_indicators:{Tile.t34_to_grf(self.hidden_bonus_indicators)}')
         for i in range(4):
             print(f'player:{i}, point:{self.points[i]}, riichi:{self.riichi_status[i]}')
             print(f'discard_tiles:{" ".join(Tile.t34_to_grf(self.discard_tiles[i]))}')
             print(f'open_meld:{" ".join(Tile.t34_to_grf(self.open_melds[i]))}')
-        
+
 
 if __name__ == '__main__':
     game = FullGame(4)
     game.game_start()
     print("Game over.")
-
