@@ -114,9 +114,9 @@ class TrainingData:
             return
         player_index = self.player_names.index(player_state.name)
         self.set_hand(player_index, player_state.s_hand34)
-        # self.set_melds_to_hand(player_index, player_state.s_meld34)
-        # self.set_minkan_to_hand(player_index, player_state.s_minkan)
-        # self.set_ankan_to_hand(player_index, player_state.s_ankan)
+        self.set_melds_to_open_hand(player_index, player_state.s_meld34)
+        self.set_minkan_to_open_hand(player_index, player_state.s_minkan)
+        self.set_ankan_to_open_hand(player_index, player_state.s_ankan)
         self.set_reveal_tiles(player_index, player_state.s_revealed)
         self.set_discard_tiles(player_index, player_state.s_discard34)
         self.set_reach_status(player_index, player_state.s_reach)
@@ -209,20 +209,20 @@ class TrainingData:
         for tile in hand34:
             self.set_tile(self.States[player_id].hand, tile)
 
-    def set_melds_to_hand(self, player_id, melds):
+    def set_melds_to_open_hand(self, player_id, melds):
         for meld in melds:
             for tile in meld:
-                self.set_tile(self.States[player_id].hand, tile)
+                self.set_tile(self.States[player_id].open_melds, tile)
 
-    def set_minkan_to_hand(self, player_id, minkans):
+    def set_minkan_to_open_hand(self, player_id, minkans):
         for minkan in minkans:
             for tile in minkan:
-                self.set_tile(self.States[player_id].hand, tile)
+                self.set_tile(self.States[player_id].open_melds, tile)
 
-    def set_ankan_to_hand(self, player_id, ankans):
+    def set_ankan_to_open_hand(self, player_id, ankans):
         for ankan in ankans:
             for tile in ankan:
-                self.set_tile(self.States[player_id].hand, tile)
+                self.set_tile(self.States[player_id].open_melds, tile)
 
     def set_reveal_tiles(self, player_id, revealed):
         self.States[player_id].all_reveal_tiles = [
