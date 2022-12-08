@@ -1,5 +1,6 @@
 import MahjongKit.MahjongKit as mjk
 import pandas as pd
+import multiprocessing as mp
 """ States in 34 form
 hand                                            : 1 * [4 * 34] V
 all reveal tiles                                : 1 * [4 * 34] V
@@ -45,6 +46,15 @@ class TrainingData:
         def __init__(self):
             self.init()
             self.init_score()
+
+        def __str__(self):
+            fl = False
+            for i in range(4):
+                fl = fl or self.hand[i] != self.base_state
+            if not fl:
+                return f'hand34 : {self.hand34}, hand : {self.hand}'
+            else:
+                return ""
 
         def init(self):
             self.action = ""
@@ -108,10 +118,12 @@ class TrainingData:
                 self.States[player_id].round_wind, player_state.s_round_wind)
             self.States[player_id].discard34 = player_state.s_discard34
             self.States[player_id].hand34 = player_state.s_hand34
+            self.set_hand(player_id, player_state.s_hand34)
             self.States[player_id].meld34 = player_state.s_meld34
             # print('init_done')
             # set round wind
             return
+        self.open_melds = [self.base_state for _ in range(4)]
         player_index = self.player_names.index(player_state.name)
         self.set_hand(player_index, player_state.s_hand34)
         self.set_melds_to_open_hand(player_index, player_state.s_meld34)
@@ -327,6 +339,7 @@ class TrainingData:
         self.discard_data.append(discard_bmp)
 
     def dump_chow_data(self, game_state: GameState):
+        print(game_state)
         chow_bmp = self.states_to_bmp(game_state)
         chow_bmp += game_state.expect_chow
         self.chow_data.append(chow_bmp)
@@ -427,7 +440,7 @@ def check_nth_log(num, level):
 
 def generate_trainging_data_after_nth(num, level, count):
     glc = mjk.GameLogCrawler()
-    glc.db_show_tables()
+    # glc.db_show_tables()
     gene = glc.db_get_logs_where_players_lv_gr(level)
     for _ in range(count):
         log = next(gene)
@@ -464,4 +477,13 @@ if __name__ == '__main__':
         C = int(input('How much logs already generated? '))
         N = int(input('How much logs are using for training data? '))
         L = int(input('What is the minimum level of players? '))
-        generate_trainging_data_after_nth(N, L - 1, C)
+        process_list = []
+        splN = N//8
+        for i in range(8):
+            p = mp.Process(target=generate_trainging_data_after_nth, args=(
+                splN, L - 1, C + i * splN))
+            p.start()
+            process_list.append(p)
+        for p in process_list:
+            p.join()
+        # generate_trainging_data_after_nth(N, L - 1, C)

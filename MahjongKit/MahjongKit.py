@@ -2082,7 +2082,8 @@ class PreProcessing:
                 first_indicator_34, first_indicator_34 + 1)
             bonus_tiles.append(first_bonus)
             round_wind = Tile.WINDS[round_num // 4]
-            player_winds = Tile.WINDS[4-round_num:] + Tile.WINDS[0:4-round_num]
+            player_winds = Tile.WINDS[(4-round_num) %
+                                      4:] + Tile.WINDS[0:(4-round_num) % 4]
             revealed = [0] * 34
 
             states = [PreProcessing.PlayerState(), PreProcessing.PlayerState(),
@@ -2423,7 +2424,10 @@ class PreProcessing:
 
     @staticmethod
     def process_one_log(log):
-        bug_log_ids = ['2022022818gm-00a9-0000-fe42eb89']
+        bug_log_ids = ['2022022818gm-00a9-0000-fe42eb89',
+                       '2021011119gm-00a9-0000-84be7051',
+                       '2021102617gm-00a9-0000-0abf2576',
+                       '2021053017gm-00a9-0000-ea6b0590']
         """
         Pre-process one log file
         :param log: game log as a dict
