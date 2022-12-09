@@ -37,8 +37,6 @@ class TrainingData:
         @property
         def full_state(self):
             return [1 for _ in range(34)]
-        # base_state = list(0 for i in range(34))
-        # full_state = list(1 for i in range(34))
 
         def init_score(self):
             self.score = 25000
@@ -48,13 +46,7 @@ class TrainingData:
             self.init_score()
 
         def __str__(self):
-            fl = False
-            for i in range(4):
-                fl = fl or self.hand[i] != self.base_state
-            if not fl:
-                return f'hand34 : {self.hand34}, hand : {self.hand}'
-            else:
-                return ""
+            return f"meld34: {self.meld34}, open_meld: {self.open_melds}"
 
         def init(self):
             self.action = ""
@@ -123,8 +115,9 @@ class TrainingData:
             # print('init_done')
             # set round wind
             return
-        self.open_melds = [self.base_state for _ in range(4)]
         player_index = self.player_names.index(player_state.name)
+        self.States[player_index].open_melds = [
+            self.base_state for _ in range(4)]
         self.set_hand(player_index, player_state.s_hand34)
         self.set_melds_to_open_hand(player_index, player_state.s_meld34)
         self.set_minkan_to_open_hand(player_index, player_state.s_minkan)
@@ -150,7 +143,7 @@ class TrainingData:
                 self.set_opp_reach_status(player_index, i, opp_id)
                 self.set_opp_score(player_index, i, opp_id)
         Action = player_state.a_action
-        is_tenhou = self.dan[player_state.name] == '天鳳' or self.dan[player_state.name] == '十段'
+        is_tenhou = self.dan[player_state.name] == '天鳳' or self.dan[player_state.name] == '十段' or self.dan[player_state.name] == '九段'
 
         if Action == None:
             return
@@ -339,7 +332,6 @@ class TrainingData:
         self.discard_data.append(discard_bmp)
 
     def dump_chow_data(self, game_state: GameState):
-        print(game_state)
         chow_bmp = self.states_to_bmp(game_state)
         chow_bmp += game_state.expect_chow
         self.chow_data.append(chow_bmp)

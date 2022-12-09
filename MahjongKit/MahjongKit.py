@@ -2227,7 +2227,7 @@ class PreProcessing:
                                 indicator, indicator + 1))
                         continue
 
-                    drop = log[drop_index][drop_to[current_player]]
+                drop = log[drop_index][drop_to[current_player]]
                 # print('drop_to : ', drop_to, drop)
 
                 # print('=' * 15)
