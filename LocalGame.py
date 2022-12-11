@@ -28,7 +28,14 @@ class FullGame():
         But the model file cant push to github.
         Comment this line if u want to run the normal thing.
         '''
-        tmp_players[0] = ModelPort(self.game_table, 'discard_cnn_3110w_data_6conv31.h5')
+        discard_cnn = 'discard_cnn_31_Final_10w_data_5conv31.h5'
+        chow_cnn = 'chow_cnn_31_final_10w_data_4conv.h5'
+        pon_cnn = 'pon_cnn_31_final_10w_data_4conv.h5'
+        riichi_cnn = 'riichi_cnn_31_final_v2_10w_data_4conv.h5'
+        tmp_players[0] = ModelPort(self.game_table, discard_cnn, chow_cnn, pon_cnn, riichi_cnn)
+        tmp_players[1] = ModelPort(self.game_table, discard_cnn, chow_cnn, pon_cnn, riichi_cnn)
+        tmp_players[2] = ModelPort(self.game_table, discard_cnn, chow_cnn, pon_cnn, riichi_cnn)
+        # stop bully CNN :(
 
         for i in range(player_count):
             tmp_players[i].set_seat(i)

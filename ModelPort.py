@@ -24,8 +24,12 @@ class ModelPort(Player):
     self_wind = None  # 1*[1*34] static
     opponents_winds = None  # 3*[1*34] static
 
-    def __init__(self, gameboard, model_file):
-        self.model = load_model(model_file)
+    def __init__(self, gameboard, discard_model, chow_model, pon_model, riichi_model):
+        self.discard_model = load_model(discard_model)
+        self.chow_model = load_model(chow_model)
+        self.pon_model = load_model(pon_model)
+        self.riichi_model = load_model(riichi_model)
+
         super().__init__(gameboard)
 
     def get_state(self):
@@ -229,7 +233,7 @@ class ModelPort(Player):
     # overide
     def to_discard_tile(self):
         state = np.array(self.get_state()).reshape(1, 34, 121, 1)
-        raw = self.model.predict(state)
+        raw = self.discard_model.predict(state)
 
         res = []
         for tile, val in enumerate(raw[0]):
@@ -248,3 +252,48 @@ class ModelPort(Player):
         print(f'chose:{Tile.t34_to_grf(self.tiles[final])} which is {i}th in prediction.')
 
         return {'tile': self.tiles[final]}
+
+    def can_discard_action(self, tile, from_player):
+        state = np.array(self.get_state()).reshape(1, 34, 121, 1)
+        if(self.seat == from_player):
+            return {'type': 'none', 'player': self.seat, 'from': from_player, 'tile': tile,
+                    'meld': [], 'need_draw': False}
+
+        discard_actions = self.can_win(tile, from_player)       # add win
+        if(discard_actions != []):
+            return discard_actions[0]
+        if(not self.is_riichi):
+            pon = self.can_pon(tile, from_player)
+            chow = self.can_chi(tile, from_player)
+            # no minkan
+            if(pon != []):
+                pon_predict = self.pon_model.predict(state)[0]
+                print(f'Predict pon for {Tile.t34_to_grf(tile)}: yes: {pon_predict[0]:.5f}, no: {pon_predict[1]:.5f}')
+                print(f'hand: {" ".join(Tile.t34_to_grf(self.tiles))}')
+                if(pon_predict[0] > pon_predict[1]):
+                    return pon[0]
+            if(chow != []):
+                chow_predict = self.chow_model.predict(state)[0]
+                print(f'Predict chow for {Tile.t34_to_grf(tile)}: yes: {chow_predict[0]:.5f}, no: {chow_predict[1]:.5f}')
+                print(f'hand: {" ".join(Tile.t34_to_grf(self.tiles))}')
+                if(chow_predict[0] > chow_predict[1]):
+                    return chow[0]
+             # add draw/none
+        return self.can_draw(tile, from_player)[0]
+
+    def can_draw_action(self, tile):
+        state = np.array(self.get_state()).reshape(1, 34, 121, 1)
+        zimo = self.can_zimo(tile)
+        if(zimo != []):
+            return zimo[0]
+        # draw_actions += self.can_ankan(tile)
+        # no ankan
+        if(not self.is_riichi):
+            reach = self.can_riichi(tile)
+            if(reach != []):
+                reach_predict = self.riichi_model.predict(state)[0]
+                print(f'Predict riichi: yes: {reach_predict[0]:.5f}, no: {reach_predict[1]:.5f}')
+                print(f'hand: {" ".join(Tile.t34_to_grf(self.tiles))}')
+                if(reach_predict[0] > reach_predict[1]):
+                    return reach[0]
+        return {'type': 'discard'}
