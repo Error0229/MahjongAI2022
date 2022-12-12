@@ -1,6 +1,5 @@
 import MahjongKit.MahjongKit as mjk
 import pandas as pd
-import multiprocessing as mp
 """ States in 34 form
 hand                                            : 1 * [4 * 34] V
 all reveal tiles                                : 1 * [4 * 34] V
@@ -452,30 +451,22 @@ def generate_trainging_data_after_nth(num, level, count):
                 td.process_player_states(present_state, state)
                 present_state = state
         td.dump_all()
-
-
-if __name__ == '__main__':
-    mode = int(input(
+class Log2Data():
+    @staticmethod
+    def start():
+        mode = int(input(
         'What mode do you want to run? (1: generate data, 2: check n-th log, 3: generate after n-th log): '))
-    if mode == 1:
-        N = int(input('How much logs are using for training data? '))
-        L = int(input('What is the minimum level of players? '))
-        generate_training_data(N, L - 1)
-    elif mode == 2:
-        N = int(input('Which log do you want to check? '))
-        L = int(input('What is the minimum level of players? '))
-        check_nth_log(N, L - 1)
-    elif mode == 3:
-        C = int(input('How much logs already generated? '))
-        N = int(input('How much logs are using for training data? '))
-        L = int(input('What is the minimum level of players? '))
-        process_list = []
-        splN = N//8
-        for i in range(8):
-            p = mp.Process(target=generate_trainging_data_after_nth, args=(
-                splN, L - 1, C + i * splN))
-            p.start()
-            process_list.append(p)
-        for p in process_list:
-            p.join()
-        # generate_trainging_data_after_nth(N, L - 1, C)
+        if mode == 1:
+            N = int(input('How much logs are using for training data? '))
+            L = int(input('What is the minimum level of players? '))
+            generate_training_data(N, L - 1)
+        elif mode == 2:
+            N = int(input('Which log do you want to check? '))
+            L = int(input('What is the minimum level of players? '))
+            check_nth_log(N, L - 1)
+        elif mode == 3:
+            C = int(input('How much logs already generated? '))
+            N = int(input('How much logs are using for training data? '))
+            L = int(input('What is the minimum level of players? '))
+            generate_trainging_data_after_nth(N, L - 1, C)
+

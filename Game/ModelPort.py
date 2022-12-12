@@ -1,5 +1,5 @@
 from MahjongKit.MahjongKit import Tile, Meld, Partition, WinWaitCal
-from Player import Player
+from Game.Player import Player
 from keras.models import load_model
 import tensorflow as tf
 import numpy as np

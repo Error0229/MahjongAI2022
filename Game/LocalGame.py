@@ -1,8 +1,9 @@
 from http.client import NOT_IMPLEMENTED
 import random
-from Player import Player
-from ModelPort import ModelPort
+from Game.Player import Player
+from Game.ModelPort import ModelPort
 from MahjongKit.MahjongKit import *
+from Game.GameTable import GameTable
 
 
 class FullGame():
@@ -21,7 +22,7 @@ class FullGame():
         self.round_number = 0
         self.game_table = GameTable()
         # tmp_players = players
-        tmp_players = [Player(self.game_table) for i in range(player_count)]
+        tmp_players = [Player(self.game_table) for _ in range(player_count)]
 
         '''
         This will make player 0 use the model u put in.
@@ -94,7 +95,7 @@ class Round():
     game = 0
     ending_status = None
 
-    def __init__(self, Game_table, player_count, players, wind, game, repeat_counter, reach_sticks, honba_sticks):
+    def __init__(self, Game_table: GameTable, player_count, players: list[Player], wind, game, repeat_counter, reach_sticks, honba_sticks):
         self.player_count = player_count
         self.players = players
         # self.dealer = round_number % player_count
@@ -130,17 +131,17 @@ class Round():
                 draw = self.game_table.draw_tile()
                 action = self.players[turn].can_draw_action(draw)
 
-                if(action['type'] == 'zimo'):
+                if (action['type'] == 'zimo'):
                     self.process_zimo(action)
                     self.who_win = turn
                     self.is_win = True
                     self.is_zimo = True
                     self.win_from_who = turn
                     return
-                elif(action['type'] == 'ankan'):
+                elif (action['type'] == 'ankan'):
                     self.players[turn].draw_tile(draw)
                     continue
-                elif(action['type'] == 'riichi'):
+                elif (action['type'] == 'riichi'):
                     self.players[turn].do_draw_action(action)
                     self.players[turn].draw_tile(draw)
                     draw = action['to_discard']
@@ -151,7 +152,7 @@ class Round():
             discard = self.players[turn].discard_tile(draw)
 
             actions = self.get_discard_action(discard, turn)
-            if(actions[0]['type'] == 'win'):
+            if (actions[0]['type'] == 'win'):
                 # process win
                 self.process_win(actions)
                 self.who_win = [action['player'] for action in actions]
@@ -176,18 +177,19 @@ class Round():
         res = [self.players[0].can_discard_action(discard, turn)]
         for i in range(1, 4):
             action = self.players[i].can_discard_action(discard, turn)
-            if(dic[action['type']] > dic[res[0]['type']]):
+            if (dic[action['type']] > dic[res[0]['type']]):
                 res = [action]
-            elif(dic[action['type']] == dic[res[0]['type']]):
+            elif (dic[action['type']] == dic[res[0]['type']]):
                 res += action
         return res
 
     # process minkan, chi, pon
     # return (turn, need_draw)
     def process_discard_action(self, action):
-        if(action['type'] in ['minkan', 'pon', 'chi']):
+        if (action['type'] in ['minkan', 'pon', 'chi']):
             self.players[action['player']].do_discard_action(action)
-            self.game_table.open_melds[action['player']] += Tile.convert_bonuses(action['meld'])
+            self.game_table.open_melds[action['player']
+                                       ] += Tile.convert_bonuses(action['meld'])
             self.game_table.discard_tile(action['from'], action['tile'])
         else:
             self.game_table.discard_tile(action['from'], action['tile'])
@@ -234,7 +236,7 @@ class Round():
         self.players[player].points += win['score']
         self.game_table.points[player] += win['score']
         for other_player in other_players:
-            if(other_player == dealer):
+            if (other_player == dealer):
                 self.players[other_player].points -= win['zimo_lose']['dealer']
                 self.game_table.points[other_player] -= win['zimo_lose']['dealer']
             else:
@@ -292,95 +294,4 @@ class Round():
         return ending_status
 
 
-class GameTable():
-
-    wind = 0
-    game = 0
-    bonus_indicators = None
-    hidden_bonus_indicators = None
-    remaining_count = 0
-    tiles = None
-    reach_sticks = 0
-    honba_sticks = 0
-    points = [0, 0, 0, 0]
-    riichi_status = [False, False, False, False]
-    discard_tiles = None
-    open_melds = None
-
-    def __init__(self, wind=-1, game=-1, reach_sticks=0, honba_sticks=0):
-        self.wind = wind
-        self.game = game
-        self.tiles = [i for j in range(4) for i in range(34)]
-        self.tiles[4] = 34
-        self.tiles[13] = 35
-        self.tiles[22] = 36
-        random.shuffle(self.tiles)
-        # add -1 at the end of tiles, to prevent index error
-        self.tiles.append(-1)
-        self.bonus_indicators = [self.tiles[9]]
-        self.hidden_bonus_indicators = [self.tiles[8]]
-        self.remaining_count = 136
-        self.revealed_tiles = [[] for i in range(4)]
-        self.reach_sticks = reach_sticks
-        self.honba_sticks = honba_sticks
-        self.points = [25000, 25000, 25000, 25000]
-
-    def set_game_table(self, wind=-1, game=-1, reach_sticks=0, honba_sticks=0):
-        self.wind = wind
-        self.game = game
-        self.tiles = [i for j in range(4) for i in range(34)]
-        self.tiles[4] = 34
-        self.tiles[13] = 35
-        self.tiles[22] = 36
-        random.shuffle(self.tiles)
-        # add -1 at the end of tiles, to prevent index error
-        self.tiles.append(-1)
-        self.bonus_indicators = [self.tiles[9]]
-        self.hidden_bonus_indicators = [self.tiles[8]]
-        self.remaining_count = 136
-        self.reach_sticks = reach_sticks
-        self.honba_sticks = honba_sticks
-        self.riichi_status = [False, False, False, False]
-        self.discard_tiles = [[] for i in range(4)]
-        self.open_melds = [[] for i in range(4)]
-
-    def draw_tile(self, num=1):
-        '''
-        pull out number of tiles
-        return -1 if fail
-        return int if pull 1 tile
-        return list of int if pull multiple tiles
-        '''
-        if (self.no_tile_left(num)):
-            return -1
-        self.remaining_count -= num
-        if (num == 1):
-            return self.tiles[self.remaining_count]
-        else:
-            return self.tiles[self.remaining_count: self.remaining_count+num]
-
-    def no_tile_left(self, num=1):
-        return self.remaining_count-num < 14
-
-    # def append_revealed_tile(self, player, tile):
-    #     self.revealed_tiles[player].append(tile)
-
-    def discard_tile(self, player, tile):
-        self.discard_tiles[player].append(Tile.convert_bonus(tile))
-
-    def display(self):
-        print('----- GameTable info -----')
-        print(f'wind:{self.wind}, game:{self.game}')
-        print(f'reach_sticks:{self.reach_sticks}, honba_sticks:{self.honba_sticks}')
-        print(f'bonus_indicators:{Tile.t34_to_grf(self.bonus_indicators)}')
-        # print(f'hidden_bonus_indicators:{Tile.t34_to_grf(self.hidden_bonus_indicators)}')
-        for i in range(4):
-            print(f'player:{i}, point:{self.points[i]}, riichi:{self.riichi_status[i]}')
-            print(f'discard_tiles:{" ".join(Tile.t34_to_grf(self.discard_tiles[i]))}')
-            print(f'open_meld:{" ".join(Tile.t34_to_grf(self.open_melds[i]))}')
-
-
-if __name__ == '__main__':
-    game = FullGame(4)
-    game.game_start()
-    print("Game over.")
+    
