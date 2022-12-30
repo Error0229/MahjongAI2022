@@ -1,5 +1,3 @@
-from hashlib import new
-from re import L
 from MahjongKit.MahjongKit import Tile, Meld, Partition, WinWaitCal
 import random
 import copy

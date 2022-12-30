@@ -1,4 +1,3 @@
-from http.client import NOT_IMPLEMENTED
 import random
 from Game.Player import Player
 from Game.ModelPort import ModelPort

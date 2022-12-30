@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import json
-from copy import deepcopy
 
 import os
 
