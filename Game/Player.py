@@ -2,6 +2,9 @@ from MahjongKit.MahjongKit import Tile, Meld, Partition, WinWaitCal
 import random
 import copy
 
+# add shantin changing records
+# add legal/inlegal discard records
+# add Ron, houjuu, tsumo counts
 
 class Player:
     wind = 0

@@ -16,7 +16,8 @@ class FullGame():
     reach_sticks = 0
     honba_sticks = 0
     player_count = 4
-
+    shantin_records = []
+    legal_discard_records = []
     def __init__(self, player_count):
         self.round_number = 0
         self.game_table = GameTable()
