@@ -870,16 +870,16 @@ class WinWaitCal:
             if is_zimo:
                 if is_dealer:
                     each = ((base_score * 2 - 1) // 100 + 1) * 100
-                    return each * 3, "{}符{}Han{}点∀".format(fu, han, each)
+                    return each * 3, "{}符{}飜{}点∀".format(fu, han, each)
                 else:
                     dscore = ((base_score * 2 - 1) // 100 + 1) * 100
                     xscore = ((base_score - 1) // 100 + 1) * 100
-                    return dscore + 2 * xscore, "{}符{}Han{}-{}点".format(fu, han, xscore, dscore)
+                    return dscore + 2 * xscore, "{}符{}飜{}-{}点".format(fu, han, xscore, dscore)
             else:
                 score = ((base_score * 6 - 1) // 100 + 1) * \
                     100 if is_dealer else (
                         (base_score * 4 - 1) // 100 + 1) * 100
-                return score, "{}符{}Han{}点".format(fu, han, score)
+                return score, "{}符{}飜{}点".format(fu, han, score)
         elif han == 5:  # when han >= 5, the fu does not make any difference to final score
             if is_dealer:
                 return 12000, "満貫4000点∀" if is_zimo else "満貫12000点"
@@ -948,7 +948,7 @@ class WinWaitCal:
                     if is_zimo and len(melds) == 0:
                         return {"fu": {"門前清自摸和平和(20Fu)": 20}, "fu_sum": 20, "fu_round": 20, "fu_desc": "門前清自摸和平和(20Fu)"}
                     if not is_zimo and len(melds) > 0:
-                        return {"fu": {"非门清平和荣和(30Fu)": 30}, "fu_sum": 30, "fu_round": 30, "fu_desc": "非门清平和荣和(30Fu)"}
+                        return {"fu": {"非門清平和荣和(30Fu)": 30}, "fu_sum": 30, "fu_round": 30, "fu_desc": "非門清平和荣和(30Fu)"}
 
         fu = {}
 
@@ -966,52 +966,52 @@ class WinWaitCal:
                                 add_base(4, "幺九明刻(4Fu)")
                         else:
                             if is_zimo or final_tile != meld[0]:
-                                add_base(4, "中张暗刻(4Fu)")
+                                add_base(4, "中張暗刻(4Fu)")
                             else:
-                                add_base(2, "中张明刻(2Fu)")
+                                add_base(2, "中張明刻(2Fu)")
 
             for meld in melds:
                 if meld[0] == meld[1]:
                     if meld[0] in Tile.ONENINE:
                         add_base(4, "幺九明刻(4Fu)")
                     else:
-                        add_base(2, "中张明刻(2Fu)")
+                        add_base(2, "中張明刻(2Fu)")
 
         def check_kans():
             for mk in minkan:
                 if mk[0] in Tile.ONENINE:
-                    add_base(16, "幺九明杠(16Fu)")
+                    add_base(16, "幺九明槓(16Fu)")
                 else:
-                    add_base(8, "中张明杠(8Fu)")
+                    add_base(8, "中張明槓(8Fu)")
             for ak in ankan:
                 if ak[0] in Tile.ONENINE:
-                    add_base(32, "幺九暗杠(32Fu)")
+                    add_base(32, "幺九暗槓(32Fu)")
                 else:
-                    add_base(16, "中张暗杠(16Fu)")
+                    add_base(16, "中張暗槓(16Fu)")
 
         def check_pair(p):
             if p[0] in Tile.THREES:
-                add_base(2, "役牌雀头(2Fu)")
+                add_base(2, "役牌雀頭(2Fu)")
             if p[0] == player_wind:
-                add_base(2, "自风雀头(2Fu)")
+                add_base(2, "自風雀頭(2Fu)")
             if p[0] == round_wind:
-                add_base(2, "场风雀头(2Fu)")
+                add_base(2, "場風雀頭(2Fu)")
 
         def check_waiting_type(p):
             chws = [m for m in hand_partition + melds if m[0] != m[1]]
             chws_with_final = [chow for chow in chws if final_tile in chow]
             if p[0] == final_tile and len(chws_with_final) == 0:
-                add_base(2, "单吊(2Fu)")
+                add_base(2, "単吊(2Fu)")
             elif len(chws_with_final) > 0:
                 if all((chw[1] == final_tile or (chw[0] == final_tile and chw[2] % 9 == 8)
                         or (chw[2] == final_tile and chw[0] % 9 == 0)) for chw in chws_with_final):
-                    add_base(2, "边张嵌张胡牌(2Fu)")
+                    add_base(2, "辺張嵌張和牌(2Fu)")
 
         def check_win_type():
             if is_zimo:
                 add_base(2, "自摸(2Fu)")
             if not is_zimo and len(melds + minkan) == 0:
-                add_base(10, "门前清荣胡(10Fu)")
+                add_base(10, "門前清荣和(10Fu)")
 
         pair = [m for m in hand_partition if len(m) == 2][0]
         check_kezi()
@@ -1250,7 +1250,6 @@ class WinWaitCal:
                 else:  # 三暗刻
                     kezi = len(ankan) + len([m for m in hand_partition
                                              if len(m) == 3 and m[0] == m[1] and (is_zimo or final_tile != m[0])])
-                    # fix final tile != m[0] -> final_tile == m[0]
                     if kezi == 3:
                         add_han(2, "三暗刻(2Han)")
 
