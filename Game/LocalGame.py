@@ -118,9 +118,10 @@ class Round():
     # get discard tile and repeat
 
     def start(self):
-        print(
-            f'Round Start\nwind : {self.wind}, game : {self.game}, dora : {Tile.t34_to_grf(Tile.ind_to_bonus_dic[self.game_table.bonus_indicators[0]])}')
+        print(f'Round Start\nwind : {self.wind}, game : {self.game}, dora : {Tile.t34_to_grf(Tile.ind_to_bonus_dic[self.game_table.bonus_indicators[0]])}')
         print('>'*50)
+        for p in self.players:
+            p.log['score'].append(p.points)
         turn = self.game-1
         is_win = False
         is_over = False
@@ -202,16 +203,16 @@ class Round():
             tile = action['tile']
             win = self.players[player].get_score(
                 tile, from_player, self.game-1 == player)
-            print('win')
-            print(
-                f"Tile: {' '.join(Tile.t34_to_grf(self.players[player].tiles))}", end=' , ')
-            print(
-                f"Melds: {' '.join(Tile.t34_to_grf(self.players[player].open_melds))}", end=' , ')
-            print(
-                f"minkans: {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
-            print(
-                f'player:{player}, from:{from_player}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(tile)}')
-            print(f'han: {win["han"]}, fu: {win["fu"]}')
+            # print('win')
+            # print(
+            #     f"Tile: {' '.join(Tile.t34_to_grf(self.players[player].tiles))}", end=' , ')
+            # print(
+            #     f"Melds: {' '.join(Tile.t34_to_grf(self.players[player].open_melds))}", end=' , ')
+            # print(
+            #     f"minkans: {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
+            # print(
+            #     f'player:{player}, from:{from_player}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(tile)}')
+            # print(f'han: {win["han"]}, fu: {win["fu"]}')
             self.players[player].points += win['score']
             self.players[from_player].points -= win['score']
             self.game_table.points[player] += win['score']
@@ -223,16 +224,16 @@ class Round():
         tile = action['tile']
         dealer = self.game-1
         win = self.players[player].get_score(tile, player, dealer == player)
-        print('zimo')
-        print(
-            f"Tile: {' '.join(Tile.t34_to_grf(self.players[player].tiles))}", end=' , ')
-        print(
-            f"Melds: {' '.join(Tile.t34_to_grf(self.players[player].open_melds))}", end=' , ')
-        print(
-            f"minkans: {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
-        print(
-            f'player:{player}, from:{player}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(tile)}')
-        print(f'han: {win["han"]}, fu: {win["fu"]}')
+        # print('zimo')
+        # print(
+        #     f"Tile: {' '.join(Tile.t34_to_grf(self.players[player].tiles))}", end=' , ')
+        # print(
+        #     f"Melds: {' '.join(Tile.t34_to_grf(self.players[player].open_melds))}", end=' , ')
+        # print(
+        #     f"minkans: {' '.join(Tile.t34_to_grf(self.players[player].minkan))}")
+        # print(
+        #     f'player:{player}, from:{player}, score:{win["score_desc"]}, tile:{Tile.t34_to_grf(tile)}')
+        # print(f'han: {win["han"]}, fu: {win["fu"]}')
         self.players[player].points += win['score']
         self.game_table.points[player] += win['score']
         for other_player in other_players:
@@ -245,9 +246,9 @@ class Round():
 
     def round_end(self):
         if not self.is_win and self.is_over:
-            print('liuju')
-            for i in range(4):
-                self.players[i].display()
+            # print('liuju')
+            # for i in range(4):
+            #     self.players[i].display()
             # self.game_table.display()
             # self.honba_sticks += 1
             self.repeat_counter += 1
@@ -264,8 +265,8 @@ class Round():
             ending_status = {"status": "exhaustive", "wind":  self.wind,
                              "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
         else:
-            for i in range(4):
-                self.players[i].display()
+            # for i in range(4):
+            #     self.players[i].display()
             # self.game_table.display()
             if self.who_win == self.game - 1:
                 self.repeat_counter += 1

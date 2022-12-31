@@ -55,7 +55,7 @@ class ModelPort(Player):
         state += [self.round_wind]
         state += [self.self_wind]
         state += self.opponents_winds
-        json.dump(state, open('state.json', 'a+'))
+        # json.dump(state, open('state.json', 'a+'))
         return state
 
     def set_static(self):
@@ -233,23 +233,23 @@ class ModelPort(Player):
     # overide
     def to_discard_tile(self):
         state = np.array(self.get_state()).reshape(1, 34, 121, 1)
-        raw = self.discard_model.predict(state)
+        raw = self.discard_model.predict(state, verbose=0)
 
         res = []
         for tile, val in enumerate(raw[0]):
             res.append({'tile': tile, 'percent': val})
         res = sorted(res, key=lambda x: -x['percent'])
 
-        for i in range(5):
-            print(f'{Tile.t34_to_grf(res[i]["tile"])} :{res[i]["percent"]:.5f}', end=' ')
+        # for i in range(5):
+            # print(f'{Tile.t34_to_grf(res[i]["tile"])} :{res[i]["percent"]:.5f}', end=' ')
 
-        print(f'\nhand: {" ".join(Tile.t34_to_grf(self.tiles))}')
+        # print(f'\nhand: {" ".join(Tile.t34_to_grf(self.tiles))}')
         i = 0
         cnv_tiles = [Tile.convert_bonus(tile) for tile in self.tiles]
         while(res[i]['tile'] not in cnv_tiles):
             i += 1
         final = cnv_tiles.index(res[i]['tile'])
-        print(f'chose:{Tile.t34_to_grf(self.tiles[final])} which is {i}th in prediction.')
+        # print(f'chose:{Tile.t34_to_grf(self.tiles[final])} which is {i}th in prediction.')
 
         return {'tile': self.tiles[final]}
 
@@ -267,15 +267,15 @@ class ModelPort(Player):
             chow = self.can_chi(tile, from_player)
             # no minkan
             if(pon != []):
-                pon_predict = self.pon_model.predict(state)[0]
-                print(f'Predict pon for {Tile.t34_to_grf(tile)}: yes: {pon_predict[0]:.5f}, no: {pon_predict[1]:.5f}')
-                print(f'hand: {" ".join(Tile.t34_to_grf(self.tiles))}')
+                pon_predict = self.pon_model.predict(state,verbose=0)[0]
+                # print(f'Predict pon for {Tile.t34_to_grf(tile)}: yes: {pon_predict[0]:.5f}, no: {pon_predict[1]:.5f}')
+                # print(f'hand: {" ".join(Tile.t34_to_grf(self.tiles))}')
                 if(pon_predict[0] > pon_predict[1]):
                     return pon[0]
             if(chow != []):
-                chow_predict = self.chow_model.predict(state)[0]
-                print(f'Predict chow for {Tile.t34_to_grf(tile)}: yes: {chow_predict[0]:.5f}, no: {chow_predict[1]:.5f}')
-                print(f'hand: {" ".join(Tile.t34_to_grf(self.tiles))}')
+                chow_predict = self.chow_model.predict(state,verbose=0)[0]
+                # print(f'Predict chow for {Tile.t34_to_grf(tile)}: yes: {chow_predict[0]:.5f}, no: {chow_predict[1]:.5f}')
+                # print(f'hand: {" ".join(Tile.t34_to_grf(self.tiles))}')
                 if(chow_predict[0] > chow_predict[1]):
                     return chow[0]
              # add draw/none
@@ -291,9 +291,9 @@ class ModelPort(Player):
         if(not self.is_riichi):
             reach = self.can_riichi(tile)
             if(reach != []):
-                reach_predict = self.riichi_model.predict(state)[0]
-                print(f'Predict riichi: yes: {reach_predict[0]:.5f}, no: {reach_predict[1]:.5f}')
-                print(f'hand: {" ".join(Tile.t34_to_grf(self.tiles))}')
+                reach_predict = self.riichi_model.predict(state, verbose=0)[0]
+                # print(f'Predict riichi: yes: {reach_predict[0]:.5f}, no: {reach_predict[1]:.5f}')
+                # print(f'hand: {" ".join(Tile.t34_to_grf(self.tiles))}')
                 if(reach_predict[0] > reach_predict[1]):
                     return reach[0]
         return {'type': 'discard'}

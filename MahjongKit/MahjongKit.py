@@ -461,25 +461,34 @@ class Partition:
 
             def incre(set_type):
                 geo_vec[set_type] += 1
-
             for m in p:
-                len(m) == 1 and incre(0)
-                len(m) == 2 and abs(m[0] - m[1]) == 0 and incre(3)
-                len(m) == 2 and abs(
+                len(m) == 1 and incre(0)                            # single    v[0]+=1 
+                len(m) == 2 and abs(m[0] - m[1]) == 0 and incre(3)  # pair      v[3]+=1
+                len(m) == 2 and abs(                                # conti and first not 0 and second not 8 v[2]+=1 else v[1]+=1
                     m[0] - m[1]) == 1 and incre(2 if m[0] % 9 > 0 and m[1] % 9 < 8 else 1)
-                len(m) == 2 and abs(m[0] - m[1]) == 2 and incre(1)
-                len(m) == 3 and incre(5 if m[0] == m[1] else 4)
+                len(m) == 2 and abs(m[0] - m[1]) == 2 and incre(1)  # conti and loss middle v[1]+=1
+                len(m) == 3 and incre(5 if m[0] == m[1] else 4)     
 
             return geo_vec
 
         def shantin_n(p):
+            # tile 0 0 0 1 1 1 2 2 2 3 3  4 4 
+            # v[0] means one tile make a chuetou
+            # v[1] means one kind of tile could make a shunzi       => 2 tile
+            # v[2] means two kinds of tile could make a shunzi      => 2 tile
+            # v[3] means one tile make a kezi / it is a chuetou     => 2 tile
+            # v[4] means a shunzi set
+            # v[5] means a kezi set
+            # needed_set is the number of sets needed to make a hand
             geo_vec = geo_vec_normal(p)
             needed_set = (4 - called_meld_num) - geo_vec[4] - geo_vec[5]
+            # [[0, 1], [2, 3], [4, 5], [9, 10], [11, 12], [20, 21], [20]]
+            # needed set  [[ , , ],[ , , ]]
             if geo_vec[3] > 0:
-                if geo_vec[1] + geo_vec[2] + geo_vec[3] - 1 >= needed_set:
+                if geo_vec[1] + geo_vec[2] + (geo_vec[3] - 1) >= needed_set:
                     return needed_set - 1
                 else:
-                    return 2 * needed_set - (geo_vec[1] + geo_vec[2] + geo_vec[3] - 1) - 1
+                    return 2 * needed_set - (geo_vec[1] + geo_vec[2] + (geo_vec[3] - 1)) - 1
             else:
                 if geo_vec[1] + geo_vec[2] >= needed_set:
                     return needed_set
@@ -530,7 +539,7 @@ class Partition:
             if geo[1] + geo[2] >= need_chow:
                 return (geo[3] == 0) + need_chow - 1 + (geo[2] == 0)
             else:
-                return (geo[3] == 0) + need_chow - 1 + need_chow - geo[1] - geo[2]
+                return (geo[3] == 0) + need_chow - 1 + (need_chow - geo[1] - geo[2])
 
         return min(shantin_ph(p) for p in partitions)
 
@@ -760,7 +769,138 @@ class Partition:
         """
         partitions = Partition.partition(tiles34)
         return Partition._shantin_pure_color(tiles34, called_melds, partitions)
+    def _shantin_yaku(tiles, called_melds, partitions, bonus_chrs):
+        def geo_vec_normal(p):
+            geo_vec = [0] * 6
 
+            def incre(set_type):
+                geo_vec[set_type] += 1
+            
+            for m in p:
+                len(m) == 1 and incre(0)                            # single    v[0]+=1 
+                len(m) == 2 and abs(m[0] - m[1]) == 0 and incre(3)  # pair      v[3]+=1
+                len(m) == 2 and abs(                                # conti and first not 0 and second not 8 v[2]+=1 else v[1]+=1
+                    m[0] - m[1]) == 1 and incre(2 if m[0] % 9 > 0 and m[1] % 9 < 8 else 1)
+                len(m) == 2 and abs(m[0] - m[1]) == 2 and incre(1)  # conti and loss middle v[1]+=1
+                len(m) == 3 and incre(5 if m[0] == m[1] else 4)     
+
+            return geo_vec
+
+        def shantin_n(p):
+            # v[0] means one tile make a chuetou
+            # v[1] means one kind of tile could make a shunzi       => 2 tile
+            # v[2] means two kinds of tile could make a shunzi      => 2 tile
+            # v[3] means one tile make a kezi / it is a chuetou     => 2 tile
+            # v[4] means a shunzi set
+            # v[5] means a kezi set
+            # needed_set is the number of sets needed to make a hand
+            flags = [0]*4
+            for m in p:
+                if m[0] in bonus_chrs:
+                    flags[len(m)] += 1
+            for meld in called_melds:
+                if meld[0] in bonus_chrs:
+                    flags[3] += 1
+            bns_count  = 0
+            for i in range(3, -1, -1):
+                if flags[i] > 0:
+                    bns_count = i
+                    break
+            extra_tile = 0
+            geo_vec = geo_vec_normal(p)
+            if bns_count == 2 and geo_vec[3] == 1:
+                extra_tile = 1
+            elif bns_count == 1:
+                extra_tile = 2
+            elif bns_count == 0:
+                extra_tile = 3
+            needed_set = (4 - len(called_melds)) - geo_vec[4] - geo_vec[5]
+                
+            # [[0, 1], [2, 3], [4, 5], [9, 10], [11, 12], [20, 21], [20]]
+            # needed set  [[ , , ],[ , , ]]
+            if geo_vec[3] > 0:
+                if geo_vec[1] + geo_vec[2] + (geo_vec[3] - 1) >= needed_set:
+                    return needed_set - 1 + extra_tile
+                else:
+                    return 2 * needed_set - (geo_vec[1] + geo_vec[2] + (geo_vec[3] - 1)) - 1 + extra_tile
+            else:
+                if geo_vec[1] + geo_vec[2] >= needed_set:
+                    return needed_set + extra_tile
+                else:
+                    return 2 * needed_set - (geo_vec[1] + geo_vec[2]) + extra_tile
+
+        return min([shantin_n(p) for p in partitions])
+    
+    def _same_color_sequence(tiles34, called_melds, partitions):
+        def geo_vec_normal_with_seq(p):
+            geo_vec = [0] * 6
+            pot_seq = []
+            com_seq = []
+            def incre(set_type):
+                geo_vec[set_type] += 1
+                return True
+            def add_pot_seq(pos):
+                pot_seq.append(pos)
+                return True
+            def add_com_seq(pos):
+                com_seq.append(pos)
+                return True
+
+            for m in p:
+                len(m) == 1 and incre(0)                            
+                len(m) == 2 and abs(m[0] - m[1]) == 0 and incre(3) 
+                len(m) == 2 and abs(m[0] - m[1]) == 1 and incre(2 if m[0] % 9 > 0 and m[1] % 9 < 8 else 1)
+                len(m) == 2 and abs(m[0] - m[1]) == 2 and incre(1)
+                len(m) == 3 and (m[0] != m[1]) and incre(4) and add_com_seq(m[0]) and add_pot_seq(m[0])
+                len(m) == 3 and (m[0] == m[1]) and incre(5)
+                if(len(m)==2 and m[0]!=m[1]):
+                    if(abs(m[0]-m[1])==2):
+                        # has [0,2] > [0,1,2]
+                        add_pot_seq(m[0])
+                    if(abs(m[0]-m[1])==1 and m[0]%9>0 and m[1]%9<8):
+                        # has [1,2] > [0,1,2], [1,2,3]
+                        add_pot_seq(m[0]-1)
+                        add_pot_seq(m[1])
+                    if(abs(m[0]-m[1])==1 and m[0]%9==0):
+                        # has [0,1] > [0,1,2]
+                        add_pot_seq(m[0])
+                    if(abs(m[0]-m[1])==1 and m[1]%9==8):
+                        # has [7,8] > [6,7,8]
+                        add_pot_seq(m[0]-1)
+            return geo_vec, pot_seq, com_seq
+
+        def shantin_same_color_sequence(p):
+            # v[0] useless singular tile
+            # v[1] hole/side of a shunzi 
+            # v[2] middle of a shunzi
+            # v[3] pair
+            # v[4] shunzi
+            # v[5] kezi            
+            geo_vec, pot_seq, com_seq = geo_vec_normal_with_seq(p)
+            
+            needed_color_seq = 3
+            for pot in pot_seq:
+                n = (pot%9 in com_seq) + (pot%9+9 in com_seq) + (pot%9+18 in com_seq)
+                if(3-n < needed_color_seq):
+                    needed_color_seq = 3-n
+            needed_other_set = 1 - geo_vec[5] - geo_vec[4]
+            
+
+            
+            needed_set = (4 - len(called_melds)) - geo_vec[4] - geo_vec[5]
+            if geo_vec[3] > 0:
+                if geo_vec[1] + geo_vec[2] + (geo_vec[3] - 1) >= needed_set:
+                    return needed_set - 1
+                else:
+                    return 2 * needed_set - (geo_vec[1] + geo_vec[2] + (geo_vec[3] - 1)) - 1
+            else:
+                if geo_vec[1] + geo_vec[2] >= needed_set:
+                    return needed_set
+                else:
+                    return 2 * needed_set - (geo_vec[1] + geo_vec[2])
+        return min([shantin_same_color_sequence(p) for p in partitions])
+    
+    
     @staticmethod
     def shantin_multiple_forms(tiles34, called_melds, bonus_chrs):
         """

@@ -21,6 +21,7 @@ class Player:
     minkan = []
     is_riichi = False
 
+
     def __init__(self, gameboard):
         self.tiles = []
         self.discard_tiles = []
@@ -29,6 +30,7 @@ class Player:
         self.open_melds = []
         self.ankan = []
         self.is_status = False
+        self.log = {'shantin':[], 'score':[], 'valid':[]}
 
     def init_tiles(self, tiles):
         self.tiles = tiles
@@ -59,6 +61,7 @@ class Player:
         self.discard_tiles.append(tile)
         #self.gameboard.discard_tile(self.seat, tile)
         # self.display()
+        self.log['shantin'].append(self.get_shantin())
         return tile
 
     # return {'tile':int, 'shantin':dic}
@@ -79,7 +82,7 @@ class Player:
             if (res == None):
                 res = check
             else:
-                if (min(list(res['shantin'].values())) < min(list(check['shantin'].values()))):
+                if (res['shantin'] < check['shantin']):
                     continue
                 else:
                     res = check
@@ -98,6 +101,8 @@ class Player:
         str_meld = f"Melds: {' '.join(Tile.t34_to_grf(self.open_melds))}"
         str_minkan = f"minkans: {' '.join(Tile.t34_to_grf(self.minkan))}"
         print(f"{str_tile:<31} , {str_meld:<20} , {str_minkan:<20}")
+        print(f'shantin: {self.log["shantin"]}')
+
         # print(f'scores:{self.gameboard.points}')
         # print(f'riichi:{self.gameboard.riichi_status}')
 
@@ -106,12 +111,20 @@ class Player:
             hand = self.tiles
         else:
             hand = new_tiles
-        melds = self.open_melds
-        if (new_meld != []):
-            melds.append(new_meld)
+        melds = self.open_melds + new_meld
         bonus_chr = list(
             filter(lambda f: f in [self.wind34, self.roundwind34, 31, 32, 33], hand))
-        return Partition.shantin_multiple_forms(hand, melds, bonus_chr)
+        all_shantin = Partition.shantin_multiple_forms(hand, melds, bonus_chr)
+        # if(min([i for i in list(all_shantin.values())])<0):
+        #     self.display()
+        #     print(f'hand:{Tile.t34_to_grf(hand)}')
+        #     print(f'melds:{Tile.t34_to_grf(melds)}')
+        #     raise Exception('shantin < 0')
+        
+        if(min([i for i in list(all_shantin.values())])<0):
+            return 0
+        else:
+            return min([i for i in list(all_shantin.values())])
 
     # only return list of tiles waiting
     def get_waiting(self, is_draw, is_dealer):
@@ -204,6 +217,7 @@ class Player:
         # print(self.tiles)
         for tile in discard_action['meld']:
             self.tiles.remove(tile)
+        
 
     def can_chi(self, tile, from_player):
         if ((self.seat - from_player) % 4 == 1):
