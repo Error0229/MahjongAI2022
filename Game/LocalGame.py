@@ -18,6 +18,8 @@ class FullGame():
     player_count = 4
     shantin_records = []
     legal_discard_records = []
+    game_log = {'rank': []}
+
     def __init__(self, player_count):
         self.round_number = 0
         self.game_table = GameTable()
@@ -62,9 +64,15 @@ class FullGame():
             self.repeat_counter = end_status['repeat_counter']
             self.reach_sticks = end_status['reach_sticks']
             self.honba_sticks = end_status['honba_sticks']
-
-    def start_round(self):
-        self.round.start()
+            for p in self.players:
+                p.player_log['score'].append(p.points)
+        
+        # end
+        player_scores = [(id, p.points) for id, p in enumerate(self.players)]
+        rank_player_scores = sorted(player_scores, key=lambda x: -x[1])
+        self.game_log['rank'] = [0, 0, 0, 0]
+        for rank, (player_id, score) in enumerate(rank_player_scores):
+            self.game_log['rank'][player_id] = rank + 1
 
     @property
     def players_getter(self):
@@ -118,10 +126,13 @@ class Round():
     # get discard tile and repeat
 
     def start(self):
-        print(f'Round Start\nwind : {self.wind}, game : {self.game}, dora : {Tile.t34_to_grf(Tile.ind_to_bonus_dic[self.game_table.bonus_indicators[0]])}')
-        print('>'*50)
+        print('Round Start')
+        #print(f'wind : {self.wind}, game : {self.game}, dora : {Tile.t34_to_grf(Tile.ind_to_bonus_dic[self.game_table.bonus_indicators[0]])}')
+        print(f'wind : {self.wind}, game : {self.game}')
+        # print('>'*50)
         for p in self.players:
-            p.log['score'].append(p.points)
+            p.init_round()
+        
         turn = self.game-1
         is_win = False
         is_over = False
@@ -218,6 +229,9 @@ class Round():
             self.game_table.points[player] += win['score']
             self.game_table.points[from_player] -= win['score']
 
+            self.players[player].player_log['ron'].append(win)
+
+
     def process_zimo(self, action):
         other_players = [0, 1, 2, 3]
         player = other_players.pop(action['player'])
@@ -289,7 +303,7 @@ class Round():
                              "win_player": self.who_win, "win_from_who": self.win_from_who, "wind":  self.wind, "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
 
         print(f'Round End')
-        print('<'*50)
+        # print('<'*50)
         # self.players[0].gameboard.display()
         # print(*self.players[0].get_state(),sep='\n')
         return ending_status

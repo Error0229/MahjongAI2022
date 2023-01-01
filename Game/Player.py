@@ -20,6 +20,7 @@ class Player:
     ankan = []
     minkan = []
     is_riichi = False
+    
 
 
     def __init__(self, gameboard):
@@ -30,7 +31,7 @@ class Player:
         self.open_melds = []
         self.ankan = []
         self.is_status = False
-        self.log = {'shantin':[], 'score':[], 'valid':[]}
+        self.player_log = {'score': [25000], 'shantin': [], 'ron':[], 'legal': []}
 
     def init_tiles(self, tiles):
         self.tiles = tiles
@@ -45,11 +46,9 @@ class Player:
         self.wind = wind
         self.wind34 = wind + 27
 
-    def init_round(self, tiles, wind, roundwind):
-        self.tiles = tiles
-        self.wind = wind
-        self.wind34 = wind + 27
-        self.roundwind34 = roundwind + 27
+    def init_round(self):
+        self.is_riichi = False
+        self.player_log['shantin'].append([])
 
     def discard_tile(self, last=None):
         # tile = self.tiles[random.randint(0, len(self.tiles)-1)]
@@ -61,7 +60,7 @@ class Player:
         self.discard_tiles.append(tile)
         #self.gameboard.discard_tile(self.seat, tile)
         # self.display()
-        self.log['shantin'].append(self.get_shantin())
+        self.player_log['shantin'][-1].append(self.get_shantin())
         return tile
 
     # return {'tile':int, 'shantin':dic}
@@ -101,7 +100,7 @@ class Player:
         str_meld = f"Melds: {' '.join(Tile.t34_to_grf(self.open_melds))}"
         str_minkan = f"minkans: {' '.join(Tile.t34_to_grf(self.minkan))}"
         print(f"{str_tile:<31} , {str_meld:<20} , {str_minkan:<20}")
-        print(f'shantin: {self.log["shantin"]}')
+        print(f'shantin: {self.player_log["shantin"]}')
 
         # print(f'scores:{self.gameboard.points}')
         # print(f'riichi:{self.gameboard.riichi_status}')
@@ -149,7 +148,6 @@ class Player:
         # WinWaitCal.waiting_calculation(hand, melds, minkan, ankan, is_zimo, self.seat, self.wind, is_riichi, bonus_num, bonus_tiles, benchan, reach_stick, is_dealer)
 
     def get_score(self, tile, from_player, is_dealer):
-        # WIP: currently only check red bonus tiles
         is_zimo = (from_player == self.seat)
         hand = Tile.convert_bonuses(self.tiles)
         bonus_tiles = [34, 35, 36]

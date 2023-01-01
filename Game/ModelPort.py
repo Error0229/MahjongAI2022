@@ -230,7 +230,7 @@ class ModelPort(Player):
     def get_34_one(self):
         return [1 for _ in range(34)]
 
-    # overide
+    # override
     def to_discard_tile(self):
         state = np.array(self.get_state()).reshape(1, 34, 121, 1)
         raw = self.discard_model.predict(state, verbose=0)
