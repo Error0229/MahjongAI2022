@@ -31,7 +31,7 @@ class Player:
         self.open_melds = []
         self.ankan = []
         self.is_status = False
-        self.player_log = {'score': [25000], 'shantin': [], 'ron':[], 'legal': []}
+        self.player_log = {'shantin': [], 'ron':[], 'legal': []}
 
     def init_tiles(self, tiles):
         self.tiles = tiles

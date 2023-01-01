@@ -4,57 +4,113 @@ import numpy as np
 
 def GameLogCollect(game):
     '''
-    WIP: houjuu, tsumo counts
+    WIP:
+    ron chance, make_other_ron chance
+    
     player_log:
-        score: scores of every round, start at 25000
         shaintin: shantin after every discard action
-        ron: detial of ron consists of: score, han
+        ron: detial of ron consists of: score, han (have bug)
 
     game_log: (each item is a list of 4 elements)
         rank: ranks after every game ended
+        score: scores after every game ended
     '''
     res = {}
-    res['score'] = [game.players[i].player_log['score'] for i in range(4)]
+    
     res['shantin'] = [game.players[i].player_log['shantin'] for i in range(4)]
     res['ron'] = [game.players[i].player_log['ron'] for i in range(4)]
     res['rank'] = game.game_log['rank']
+    res['score'] = game.game_log['score']
     return res
 
 def AnalyzeResult(data):
     # only show the score chart of the first game
     player_names = ['cnn0', 'cnn1', 'cnn2', 'greedy']
-
-    fig, ax = plt.subplots()
-
-    y = np.array(data[1]['score'])
-    ax.set(xlabel='round', ylabel='score')
-    ax.set_yticks(np.arange(0, 40001, 5000))
-    ax.set_ylim(10000, 40000)
-    ax.set_xticks(np.arange(0, len(data[1]['score'][0]), 1))
-    ax.tick_params(axis="both", direction="in")
     
-    ax.plot(data[0]['score'][0], 'c', label=player_names[0])
-    ax.plot(data[0]['score'][1], 'm', label=player_names[1])
-    ax.plot(data[0]['score'][2], 'y', label=player_names[2])
-    ax.plot(data[0]['score'][3], 'k', label=player_names[3])
-    ax.legend()
-    plt.show()
+    def show_shantin_chart():
+        lst = [[], [], [], []]
+        for player_id in range(4):
+            for game_id in range(game_count):
+                lst[player_id] += data[game_id]['shantin'][player_id]
 
-def test_data():
-    data = {}
-    data[0] = {'score': [[25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000], [25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000], [25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000], [25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000, 25000]], 'shantin': [[[2, 3, 3, 2, 2, 2, 3, 3, 3, 3, 3, 2, 3, 2, 3, 3, 3, 3, 2], [4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2], [5, 5, 4, 3, 2, 3, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [5, 4, 4, 2, 2, 3, 2, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2], [4, 3, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [4, 3, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 2, 2, 1], [4, 3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2], [3, 2, 2, 2, 2, 1, 1, 1, 2, 2, 1, 2, 2, 1, 1, 2, 2, 1, 1]], [[3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1], [3, 3, 3, 2, 2, 2, 2, 3, 3, 2, 2, 2, 2, 1, 2, 2, 2, 3, 3], [4, 3, 2, 2, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0], [3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 2, 2, 1], [4, 4, 4, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1], [1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 2, 2, 1, 1, 0, 0, 0, 1], [5, 5, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1], [2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 2, 2]], [[4, 4, 4, 4, 4, 3, 2, 3, 3, 2, 2, 1, 1, 1, 1, 2, 2, 2], [3, 3, 3, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2], [4, 4, 3, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 2, 2, 1, 1, 1, 2, 2], [4, 4, 3, 3, 2, 2, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 1, 1, 1, 2], [4, 3, 3, 3, 2, 2, 3, 3, 3, 2, 2, 1, 1, 3, 3, 3, 1, 1, 2], [6, 5, 4, 3, 3, 2, 2, 2, 2, 1, 2, 2, 1, 1, 1, 1, 1, 0, 0], [4, 4, 4, 4, 4, 4, 4, 3, 2, 3, 3, 3, 3, 2, 2, 3, 2, 2, 3], [3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1]], [[3, 2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0], [5, 5, 4, 3, 3, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [4, 3, 3, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1], [3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [4, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [4, 4, 3, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1], [4, 4, 4, 3, 3, 3, 2, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0], [4, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0]]], 'ron': [[], [], [], []], 'rank': [1, 2, 3, 4]}
-    data[1] = {'score': [[25000, 25000, 24980, 24970, 24970, 24970, 24970, 24970, 24970, 24970], [25000, 25000, 24997, 24987, 23287, 23287, 23287, 23287, 23287, 23287], [25000, 25000, 27700, 29800, 29800, 29800, 29400, 29400, 29400, 29400], [25000, 25000, 24980, 24970, 26670, 26670, 27070, 27070, 27070, 27070]], 'shantin': [[[4, 4, 4, 4, 4, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [5, 4, 3, 3, 3, 2, 1], [2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 3, 2, 1, 1, 1], [4, 4, 4, 4, 4, 4, 4, 4], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 2, 2, 2], [2, 2, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1], [4, 3, 3, 3, 3, 3, 3, 4, 3, 3, 3, 2, 2, 1, 1, 1, 2, 2, 2, 2], [3, 3, 3, 3, 3, 2, 2, 1, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2], [3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], [[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 2, 2, 2, 2, 2, 3], [4, 3, 3, 3, 2, 2, 2, 2], [2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 1, 2, 2, 3, 3, 3, 3], [4, 4, 4, 3, 3, 3, 3, 3], [4, 3, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1], [3, 3, 3, 3, 2, 2, 3, 3, 3, 3, 3, 3, 2], [3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1], [4, 4, 4, 4, 4, 4, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1], [3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]], [[3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1], [3, 3, 2, 2, 2, 1, 1], [3, 2, 3, 2, 3, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0], [3, 3, 3, 3, 3, 2, 2, 2], [2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2], [5, 5, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3], [4, 4, 4, 4, 3, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 0, 0, 0], [3, 3, 2, 2, 2, 1, 1, 0, 1, 1, 1, 0, 0, 1, 2, 2, 2, 2, 3, 2], [2, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 1, 1]], [[3, 2, 2, 2, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [3, 3, 3, 2, 2, 2, 2], [3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1], [2, 1, 1, 1, 1, 0, 0, 0], [3, 3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [3, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0], [4, 3, 2, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [4, 4, 3, 3, 3, 2, 2, 2, 2, 2, 2, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]], 'ron': [[], [], [], [{'score': 1700, 'score_desc': '20Fu/1Han --> 20符1飜700点 1700点', 'han': {'立直(1Han)': 1}, 'han_desc': '立直(1Han)', 'fu': {'幺九暗刻(8Fu)': 8, '辺張嵌張和牌(2Fu)': 2, '門前清荣和(10Fu)': 10}, 'fu_desc': '幺九暗刻(8Fu) 辺張嵌張和牌(2Fu) 門前清荣和(10Fu)', 'partition': [[0, 1, 2], [9, 9], [14, 15, 16], [20, 21, 22], [29, 29, 29]], 'zimo_lose': {'is_zimo': False}}, {'score': 400, 'score_desc': '10Fu/1Han --> 10符1飜400点 400点', 'han': {'一気通貫(1Han)': 1}, 'han_desc': '一気 通貫(1Han)', 'fu': {'辺張嵌張和牌(2Fu)': 2}, 'fu_desc': '辺張嵌張和牌(2Fu)', 'partition': [[0, 1, 2], [3, 4, 5], [10, 11, 12], [23, 23]], 'zimo_lose': {'is_zimo': False}}]], 'rank': [3, 4, 1, 2]}
-    return data
+        res = [[], [], [], []]
+        action_cnts = [0, 0, 0, 0]
+        is_left = True
+        i = 0
+        while(is_left):
+            is_left = False
+            for player_id in range(4):
+                cnt_shantin = 0
+                sum_shantin = 0
+                for llst in lst[player_id]:
+                    if(i<len(llst)):
+                        sum_shantin += llst[i]
+                        cnt_shantin += 1
+                        is_left = True
+                if(cnt_shantin>0):
+                    action_cnts[player_id] += 1
+                    res[player_id].append(sum_shantin/cnt_shantin)
+            i += 1
+
+        fig, ax = plt.subplots(2, 2)
+        for player_id in range(4):
+            sub_ax = ax[player_id//2][player_id%2]
+            sub_ax.set(xlabel='action', ylabel='shantin', title=player_names[player_id])
+            sub_ax.set_yticks(np.arange(0, 7, 1))
+            sub_ax.set_ylim(0, 6)
+            sub_ax.set_xticks(np.arange(0, action_cnts[player_id], 1))
+            sub_ax.tick_params(axis="both", direction="in")
+            sub_ax.plot(res[player_id])
+        plt.show()
+        
+
+    def show_rank_chart():
+        fig, ax = plt.subplots()
+        
+        ax.set(xlabel='game', ylabel='rank')
+        ax.set_yticks(np.arange(0, 5, 1))
+        ax.set_ylim(0, 5)
+    
+        ax.set_xticks(np.arange(0, game_count, 1))
+        ax.tick_params(axis="both", direction="in")
+    
+        ax.plot([data[i]['rank'][0] for i in range(game_count)], 'c', label=player_names[0])
+        ax.plot([data[i]['rank'][1] for i in range(game_count)], 'm', label=player_names[1])
+        ax.plot([data[i]['rank'][2] for i in range(game_count)], 'y', label=player_names[2])
+        ax.plot([data[i]['rank'][3] for i in range(game_count)], 'k', label=player_names[3])
+        ax.legend()
+        plt.show()
+
+
+    def show_score_chart():
+        fig, ax = plt.subplots()
+        
+        ax.set(xlabel='game', ylabel='score')
+        ax.set_yticks(np.arange(0, 50001, 5000))
+        ax.set_ylim(0, 50000)
+    
+        ax.set_xticks(np.arange(0, game_count, 1))
+        ax.tick_params(axis="both", direction="in")
+    
+        ax.plot([data[i]['score'][0] for i in range(game_count)], 'c', label=player_names[0])
+        ax.plot([data[i]['score'][1] for i in range(game_count)], 'm', label=player_names[1])
+        ax.plot([data[i]['score'][2] for i in range(game_count)], 'y', label=player_names[2])
+        ax.plot([data[i]['score'][3] for i in range(game_count)], 'k', label=player_names[3])
+        ax.legend()
+        plt.show()
+    
+    show_shantin_chart()
+
+
 
 game_count = 2
 
 if __name__ =='__main__':
-    results = {}
+    results = []
     for i in range(game_count):
         game = FullGame(4)
         game.game_start()
-        results[i] = GameLogCollect(game)
-    # results = test_data()
+        results.append(GameLogCollect(game))
     AnalyzeResult(results) 
 
 

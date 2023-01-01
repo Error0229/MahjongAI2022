@@ -18,14 +18,14 @@ class FullGame():
     player_count = 4
     shantin_records = []
     legal_discard_records = []
-    game_log = {'rank': []}
+    
 
     def __init__(self, player_count):
         self.round_number = 0
         self.game_table = GameTable()
         # tmp_players = players
         tmp_players = [Player(self.game_table) for _ in range(player_count)]
-
+        self.game_log = {'rank': [], 'score': []}
         '''
         This will make player 0 use the model u put in.
         But the model file cant push to github.
@@ -64,15 +64,16 @@ class FullGame():
             self.repeat_counter = end_status['repeat_counter']
             self.reach_sticks = end_status['reach_sticks']
             self.honba_sticks = end_status['honba_sticks']
-            for p in self.players:
-                p.player_log['score'].append(p.points)
         
         # end
         player_scores = [(id, p.points) for id, p in enumerate(self.players)]
         rank_player_scores = sorted(player_scores, key=lambda x: -x[1])
+        
         self.game_log['rank'] = [0, 0, 0, 0]
+        self.game_log['score'] = [0, 0, 0, 0]
         for rank, (player_id, score) in enumerate(rank_player_scores):
             self.game_log['rank'][player_id] = rank + 1
+            self.game_log['score'][player_id] = score
 
     @property
     def players_getter(self):
