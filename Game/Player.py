@@ -21,8 +21,6 @@ class Player:
     minkan = []
     is_riichi = False
     
-
-
     def __init__(self, gameboard):
         self.tiles = []
         self.discard_tiles = []
@@ -31,7 +29,7 @@ class Player:
         self.open_melds = []
         self.ankan = []
         self.is_status = False
-        self.player_log = {'shantin': [], 'ron':[], 'legal': []}
+        self.player_log = {'shantin': [], 'legal_predict': [], 'ron_cnt':0, 'houjuu_cnt':0, 'tsumo_cnt':0, 'tenpai_cnt':0}
 
     def init_tiles(self, tiles):
         self.tiles = tiles
@@ -49,6 +47,7 @@ class Player:
     def init_round(self):
         self.is_riichi = False
         self.player_log['shantin'].append([])
+        self.player_log['legal_predict'].append([])
 
     def discard_tile(self, last=None):
         # tile = self.tiles[random.randint(0, len(self.tiles)-1)]
@@ -63,12 +62,15 @@ class Player:
         self.player_log['shantin'][-1].append(self.get_shantin())
         return tile
 
-    # return {'tile':int, 'shantin':dic}
-    def to_discard_tile(self):
+    # return {'tile':int, 'shantin':int}
+    def to_discard_tile(self, new_hand=None, new_meld=[]):
         is_check = [False for i in range(34)]
         res = None
         for id in range(len(self.tiles)):
-            hand = copy.deepcopy(self.tiles)
+            if(new_hand==None):
+                hand = copy.deepcopy(self.tiles)
+            else:
+                hand = copy.deepcopy(new_hand)
             new_tile = hand.pop(id)
             if (is_check[Tile.convert_bonus(new_tile)]):
                 # perfer to discard the normal tile over bonus tile
@@ -77,7 +79,7 @@ class Player:
                 continue
             else:
                 is_check[Tile.convert_bonus(new_tile)] = True
-            check = {'tile': new_tile, 'shantin': self.get_shantin(hand)}
+            check = {'tile': new_tile, 'shantin': self.get_shantin(hand, new_meld)}
             if (res == None):
                 res = check
             else:
@@ -90,7 +92,6 @@ class Player:
     def draw_tile(self, tile):
         self.tiles.append(tile)
         self.tiles.sort()
-        # print(f'{self.seat}==sort===')
 
     def display(self):
         print(f'player {self.seat}, Wind: {Tile.t34_to_grf(self.wind34)}', end=' , ')
@@ -102,9 +103,6 @@ class Player:
         print(f"{str_tile:<31} , {str_meld:<20} , {str_minkan:<20}")
         print(f'shantin: {self.player_log["shantin"]}')
 
-        # print(f'scores:{self.gameboard.points}')
-        # print(f'riichi:{self.gameboard.riichi_status}')
-
     def get_shantin(self, new_tiles=None, new_meld=[]):
         if (new_tiles == None):
             hand = self.tiles
@@ -114,12 +112,6 @@ class Player:
         bonus_chr = list(
             filter(lambda f: f in [self.wind34, self.roundwind34, 31, 32, 33], hand))
         all_shantin = Partition.shantin_multiple_forms(hand, melds, bonus_chr)
-        # if(min([i for i in list(all_shantin.values())])<0):
-        #     self.display()
-        #     print(f'hand:{Tile.t34_to_grf(hand)}')
-        #     print(f'melds:{Tile.t34_to_grf(melds)}')
-        #     raise Exception('shantin < 0')
-        
         if(min([i for i in list(all_shantin.values())])<0):
             return 0
         else:
@@ -185,38 +177,46 @@ class Player:
     draw_action:
         zimo, ankan, riichi, none
     '''
-
     def can_discard_action(self, tile, from_player):
         if(self.seat == from_player):
             return {'type': 'none', 'player': self.seat, 'from': from_player, 'tile': tile,
                     'meld': [], 'need_draw': False}
-
-        # if(True):
-        #     return self.can_draw(tile, from_player)[0]
-
-        discard_actions = self.can_win(tile, from_player)       # add win
+        discard_actions = self.can_win(tile, from_player)           # add win
         if(discard_actions != []):
             return discard_actions[0]
+        discard_actions += self.can_draw(tile, from_player)         # add draw/none
         if(not self.is_riichi):
             discard_actions += self.can_pon(tile, from_player)      # add pon
             discard_actions += self.can_chi(tile, from_player)      # add chi
             discard_actions += self.can_minkan(tile, from_player)   # add minkan
-        discard_actions += self.can_draw(tile, from_player)     # add draw/none
-        return random.choice(discard_actions)
+        
+        least_shantin = self.to_discard_tile()['shantin']
+        best_action = discard_actions[0]
+        for action in discard_actions[1::]:
+            new_hand = copy.deepcopy(self.tiles) + action['meld']
+            for t in action['meld']:
+                new_hand.remove(t)
+            if(action['type']=='chi' or action['type']=='pon'):
+                new_shanten = self.to_discard_tile(new_hand, [action['meld']])['shantin']
+                if(new_shanten < least_shantin):
+                    least_shantin = new_shanten
+                    best_action = action
+            elif(action['type']=='minkan'):
+                new_shanten = self.get_shantin(new_hand, [action['meld']])
+                if(new_shanten < least_shantin):
+                    least_shantin = new_shanten
+                    best_action = action
+        return best_action
 
     def do_discard_action(self, discard_action):
-        # print(discard_action)
         if (discard_action['type'] == 'chi' or discard_action['type'] == 'pon'):
             self.open_melds.append(discard_action['meld'])
         elif discard_action['type'] == 'minkan':
             self.minkan.append(discard_action['meld'])
-        # self.open_melds.append(discard_action['meld'])
         self.tiles.append(discard_action['tile'])
-        # print(self.tiles)
         for tile in discard_action['meld']:
             self.tiles.remove(tile)
         
-
     def can_chi(self, tile, from_player):
         if ((self.seat - from_player) % 4 == 1):
             melds = []
@@ -293,9 +293,9 @@ class Player:
         draw_actions = self.can_zimo(tile)
         if(draw_actions != []):
             return draw_actions[0]
-        draw_actions += self.can_ankan(tile)
         if(not self.is_riichi):
             draw_actions += self.can_riichi(tile)
+        draw_actions += self.can_ankan(tile)
         draw_actions += [{'type': 'discard'}]
         return draw_actions[0]
         # return random.choice(draw_actions)
@@ -347,7 +347,6 @@ class Player:
                 waiting = new_waiting
                 to_discard = tile
         if(waiting != []):
-            #print(f'waiting:{Tile.t34_to_grf(waiting)}, discard:{Tile.t34_to_grf(to_discard)}')
             return [{'type': 'riichi', 'player': self.seat, 'from': self.seat, 'tile': tile, 'need_draw': False, 'to_discard': to_discard}]
         return []
 
@@ -355,6 +354,19 @@ class Player:
         if (tile in self.get_waiting(True, self.gameboard.game-1 == self.seat)):
             return [{'type': 'zimo', 'player': self.seat, 'from': self.seat, 'tile': tile, 'need_draw': False}]
         return []
+
+    def update_log_round_end(self, status):
+        if(status['status'] == 'Win'):
+            if(status['win_player'] == self.seat):
+                if(status['is_zimo']):
+                    self.player_log['tsumo_cnt'] += 1
+                else:
+                    self.player_log['ron_cnt'] += 1
+            elif(status['is_zimo']==False and status['win_from_who']==self.seat):
+                self.player_log['houjuu_cnt'] += 1
+
+        if(self.is_tenpai):
+            self.player_log['tenpai_cnt'] += 1
 
     @ property
     def is_tenpai(self):

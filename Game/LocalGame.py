@@ -19,24 +19,17 @@ class FullGame():
     shantin_records = []
     legal_discard_records = []
     
-
     def __init__(self, player_count):
         self.round_number = 0
         self.game_table = GameTable()
         # tmp_players = players
         tmp_players = [Player(self.game_table) for _ in range(player_count)]
-        self.game_log = {'rank': [], 'score': []}
-        '''
-        This will make player 0 use the model u put in.
-        But the model file cant push to github.
-        Comment this line if u want to run the normal thing.
-        '''
         discard_cnn = 'discard_cnn_31_Final_10w_data_5conv31.h5'
         chow_cnn = 'chow_cnn_31_final_10w_data_4conv.h5'
         pon_cnn = 'pon_cnn_31_final_10w_data_4conv.h5'
         riichi_cnn = 'riichi_cnn_31_final_v2_10w_data_4conv.h5'
         tmp_players[0] = ModelPort(self.game_table, discard_cnn, chow_cnn, pon_cnn, riichi_cnn)
-        tmp_players[1] = ModelPort(self.game_table, discard_cnn, chow_cnn, pon_cnn, riichi_cnn)
+        #tmp_players[1] = ModelPort(self.game_table, discard_cnn, chow_cnn, pon_cnn, riichi_cnn)
         tmp_players[2] = ModelPort(self.game_table, discard_cnn, chow_cnn, pon_cnn, riichi_cnn)
         # stop bully CNN :(
 
@@ -44,28 +37,31 @@ class FullGame():
             tmp_players[i].set_seat(i)
             tmp_players[i].set_wind(i)
             tmp_players[i].set_round_wind(i)
-        # random.shuffle(tmp_players)
-        self.players = tmp_players
-        # self.round = Round(player_count, tmp_players, 0, 0, 0, 0,0,0)
 
+        self.players = tmp_players
+        self.game_log = {'rank': [], 'score': [], 'liuju_cnt':0, 'round_cnt':0}
+        
     def game_start(self):
         while (not (self.wind == 1 and self.game == 5)):
-            # self.round_number += 1
             self.game_table.set_game_table(
                 self.wind, self.game, self.honba_sticks, self.reach_sticks)
             self.round = Round(self.game_table, self.player_count, self.players,
                                self.wind, self.game, self.repeat_counter, self.reach_sticks, self.honba_sticks)
-            for player in self.players:
-                player.is_riichi = False
             self.round.start()
+            # end of round
             end_status = self.round.round_end()
             self.wind = end_status['wind']
             self.game = end_status['game']
             self.repeat_counter = end_status['repeat_counter']
             self.reach_sticks = end_status['reach_sticks']
             self.honba_sticks = end_status['honba_sticks']
-        
-        # end
+            
+            for player in self.players:
+                player.update_log_round_end(end_status)
+            self.game_log['round_cnt'] += 1
+            self.game_log['liuju_cnt'] += (end_status['status']=='exhaustive')
+
+        # end of game
         player_scores = [(id, p.points) for id, p in enumerate(self.players)]
         rank_player_scores = sorted(player_scores, key=lambda x: -x[1])
         
@@ -107,7 +103,6 @@ class Round():
     def __init__(self, Game_table: GameTable, player_count, players: list[Player], wind, game, repeat_counter, reach_sticks, honba_sticks):
         self.player_count = player_count
         self.players = players
-        # self.dealer = round_number % player_count
         self.wind = wind
         self.game = game
         self.repeat_counter = repeat_counter
@@ -120,20 +115,13 @@ class Round():
             player.ankan = []
             player.minkan = []
 
-    # round post last tile to players
-    # get their responds
-    # chose one to proceed (win > pon/kan > chi > none)
-    # draw to player if need draw
-    # get discard tile and repeat
-
     def start(self):
         print('Round Start')
         #print(f'wind : {self.wind}, game : {self.game}, dora : {Tile.t34_to_grf(Tile.ind_to_bonus_dic[self.game_table.bonus_indicators[0]])}')
-        print(f'wind : {self.wind}, game : {self.game}')
         # print('>'*50)
+        print(f'wind : {self.wind}, game : {self.game}')
         for p in self.players:
             p.init_round()
-        
         turn = self.game-1
         is_win = False
         is_over = False
@@ -176,13 +164,10 @@ class Round():
             else:
                 # process discard action
                 turn, need_draw = self.process_discard_action(actions[0])
-            # self.game_table.display()
-
         self.is_win = 0
         self.is_over = 1
         self.who_win = -1
         self.win_from_who = -1
-        # self.round_end(0, 0)
 
     # choose a list discard actions
     def get_discard_action(self, discard, turn):
@@ -197,7 +182,6 @@ class Round():
         return res
 
     # process minkan, chi, pon
-    # return (turn, need_draw)
     def process_discard_action(self, action):
         if (action['type'] in ['minkan', 'pon', 'chi']):
             self.players[action['player']].do_discard_action(action)
@@ -229,9 +213,6 @@ class Round():
             self.players[from_player].points -= win['score']
             self.game_table.points[player] += win['score']
             self.game_table.points[from_player] -= win['score']
-
-            self.players[player].player_log['ron'].append(win)
-
 
     def process_zimo(self, action):
         other_players = [0, 1, 2, 3]
@@ -308,6 +289,3 @@ class Round():
         # self.players[0].gameboard.display()
         # print(*self.players[0].get_state(),sep='\n')
         return ending_status
-
-
-    

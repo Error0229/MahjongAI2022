@@ -208,7 +208,7 @@ class ModelPort(Player):
                 res.append(self.get_34_zero())
         self.opponents_reach_status = res
 
-    # dynamic_doras             1*[4*34] dynamic TODO
+    # dynamic_doras             1*[4*34] dynamic
     def __update_dynamic_doras(self):
         res = self.get_34_zeros(4)
         for indi in self.gameboard.bonus_indicators:
@@ -250,6 +250,11 @@ class ModelPort(Player):
             i += 1
         final = cnv_tiles.index(res[i]['tile'])
         # print(f'chose:{Tile.t34_to_grf(self.tiles[final])} which is {i}th in prediction.')
+
+        if(i<5):
+            self.player_log['legal_predict'][-1].append(1)
+        else:
+            self.player_log['legal_predict'][-1].append(-1)
 
         return {'tile': self.tiles[final]}
 
