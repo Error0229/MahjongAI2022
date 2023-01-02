@@ -134,7 +134,7 @@ class Round():
 
                 if (action['type'] == 'zimo'):
                     self.process_zimo(action)
-                    self.who_win = turn
+                    self.who_win = [turn]
                     self.is_win = True
                     self.is_zimo = True
                     self.win_from_who = turn
@@ -166,7 +166,7 @@ class Round():
                 turn, need_draw = self.process_discard_action(actions[0])
         self.is_win = 0
         self.is_over = 1
-        self.who_win = -1
+        self.who_win = []
         self.win_from_who = -1
 
     # choose a list discard actions
@@ -178,7 +178,7 @@ class Round():
             if (dic[action['type']] > dic[res[0]['type']]):
                 res = [action]
             elif (dic[action['type']] == dic[res[0]['type']]):
-                res += action
+                res += [action]
         return res
 
     # process minkan, chi, pon
@@ -264,7 +264,7 @@ class Round():
             # for i in range(4):
             #     self.players[i].display()
             # self.game_table.display()
-            if self.who_win == self.game - 1:
+            if self.game - 1 in self.who_win:
                 self.repeat_counter += 1
                 self.honba_sticks += 1
                 self.reach_sticks = 0
@@ -282,7 +282,7 @@ class Round():
                                     1 - self.game + 4)
                     player.set_round_wind(self.wind)
             ending_status = {"status": "Win", "is_zimo": self.is_zimo,
-                             "win_player": self.who_win, "win_from_who": self.win_from_who, "wind":  self.wind, "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
+                             "win_players": self.who_win, "win_from_who": self.win_from_who, "wind":  self.wind, "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
 
         print(f'Round End')
         # print('<'*50)

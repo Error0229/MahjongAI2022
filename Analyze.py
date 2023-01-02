@@ -92,7 +92,7 @@ def AnalyzeResult(data):
                 sum_predict = 0
                 for llst in lst[player_id]:
                     if(i<len(llst)):
-                        sum_predict += llst[i]
+                        sum_predict += (llst[i]==-1)
                         cnt_predict += 1
                         is_left = True
                 if(cnt_predict>0):
@@ -109,7 +109,8 @@ def AnalyzeResult(data):
             sub_ax.set_ylim(0, 1)
             sub_ax.set_xticks(np.arange(0, predict_cnts[player_id], 1))
             sub_ax.tick_params(axis="both", direction="in")
-            sub_ax.plot(res[player_id])
+            #sub_ax.plot(res[player_id])
+            sub_ax.bar(np.arange(0, predict_cnts[player_id], 1), res[player_id], width=0.75)
         plt.show()
 
     def show_rank_chart():
@@ -195,9 +196,11 @@ game_count = 2
 if __name__ =='__main__':
     results = []
     for i in range(game_count):
+        print(f'game {i+1}/{game_count}')
         game = FullGame(4)
         game.game_start()
         results.append(GameLogCollect(game))
+    open('result.txt', 'w').write(str(results))
     # print(results)
     # results = test_data()
     AnalyzeResult(results) 

@@ -357,7 +357,7 @@ class Player:
 
     def update_log_round_end(self, status):
         if(status['status'] == 'Win'):
-            if(status['win_player'] == self.seat):
+            if(self.seat in status['win_players']):
                 if(status['is_zimo']):
                     self.player_log['tsumo_cnt'] += 1
                 else:
