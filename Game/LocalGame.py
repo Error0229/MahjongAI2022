@@ -116,8 +116,8 @@ class Round():
             player.minkan = []
 
     def start(self):
-        print('Round Start')
-        #print(f'wind : {self.wind}, game : {self.game}, dora : {Tile.t34_to_grf(Tile.ind_to_bonus_dic[self.game_table.bonus_indicators[0]])}')
+        # print('Round Start')
+        # print(f'wind : {self.wind}, game : {self.game}, dora : {Tile.t34_to_grf(Tile.ind_to_bonus_dic[self.game_table.bonus_indicators[0]])}')
         # print('>'*50)
         print(f'wind : {self.wind}, game : {self.game}')
         for p in self.players:
@@ -284,7 +284,7 @@ class Round():
             ending_status = {"status": "Win", "is_zimo": self.is_zimo,
                              "win_players": self.who_win, "win_from_who": self.win_from_who, "wind":  self.wind, "game": self.game, "repeat_counter": self.repeat_counter, "honba_sticks": self.honba_sticks, "reach_sticks": self.reach_sticks}
 
-        print(f'Round End')
+        # print(f'Round End')
         # print('<'*50)
         # self.players[0].gameboard.display()
         # print(*self.players[0].get_state(),sep='\n')
