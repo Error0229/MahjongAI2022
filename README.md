@@ -52,7 +52,7 @@ player 3, Wind: 🀁 , score: 26300 , riichi: True , Tile: 🀈 🀈 🀋 🀌 �
 ```
 
 ## Results
-This part will describe in the report precisely.
+[Report](./Report.pdf)
 # Downloads
 Models: [Google drive](https://drive.google.com/drive/folders/1-S6VTXC1IxihaiXAqBHY9yerPFF0HCNC?usp=sharing)  
 Training Data, gamelog.db [Google drive](https://drive.google.com/drive/folders/1S3AyABPsXYCukd1bYhUdIlt8OXBicPMb?usp=sharing)
